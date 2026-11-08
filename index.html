@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สมุดคะแนนรายห้อง</title>
+<meta name="description" content="บันทึกคะแนน เช็คชื่อ และคะแนนเสริม รายห้องเรียน ใช้งานได้ทันทีแม้ออฟไลน์">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6fa; --surface:#ffffff; --surface-2:#f0f2f7; --line:#e3e6ee;
+  --text:#1b2133; --muted:#69708a; --brand:#4f46e5; --brand-ink:#ffffff; --brand-soft:#eef0ff;
+  --ok:#16a34a; --ok-soft:#e7f7ec; --bad:#dc2626; --bad-soft:#fdecec;
+  --warn:#d97706; --warn-soft:#fdf3e2; --info:#0284c7; --info-soft:#e4f3fb;
+  --shadow:0 1px 2px rgba(20,24,40,.06),0 4px 16px rgba(20,24,40,.06);
+  --r:14px; --r-sm:9px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1220; --surface:#171b2c; --surface-2:#1f2438; --line:#2a3049;
+    --text:#e8eaf3; --muted:#9097b3; --brand:#818cf8; --brand-ink:#0f1220; --brand-soft:#262b4d;
+    --ok:#4ade80; --ok-soft:#173326; --bad:#f87171; --bad-soft:#3a1d22;
+    --warn:#fbbf24; --warn-soft:#3a2e14; --info:#38bdf8; --info-soft:#13304a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1220; --surface:#171b2c; --surface-2:#1f2438; --line:#2a3049;
+  --text:#e8eaf3; --muted:#9097b3; --brand:#818cf8; --brand-ink:#0f1220; --brand-soft:#262b4d;
+  --ok:#4ade80; --ok-soft:#173326; --bad:#f87171; --bad-soft:#3a1d22;
+  --warn:#fbbf24; --warn-soft:#3a2e14; --info:#38bdf8; --info-soft:#13304a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"IBM Plex Sans Thai",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- top bar ---------- */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1400px;margin:auto;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto}
+.logo i{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),#a855f7);display:grid;place-items:center;color:#fff;font-style:normal;font-size:18px}
+.class-pick{display:flex;gap:8px;align-items:center}
+select.ctl,input.ctl,textarea.ctl{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 11px;min-height:40px}
+select.ctl{padding-right:28px}
+textarea.ctl{width:100%;min-height:140px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);padding:8px 14px;min-height:40px;font-weight:500;white-space:nowrap;transition:background .15s,border-color .15s,transform .05s}
+.btn:hover{background:var(--surface-2)}
+.btn:active{transform:translateY(1px)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{min-height:32px;padding:4px 10px;font-size:13.5px}
+.icon-btn{width:40px;padding:0;justify-content:center}
+
+/* ---------- tabs ---------- */
+nav.tabs{max-width:1400px;margin:auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{border:0;background:none;padding:10px 14px;border-bottom:2.5px solid transparent;color:var(--muted);font-weight:600;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
+main{max-width:1400px;margin:auto;padding:18px 16px 60px}
+
+/* ---------- generic ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .grow{flex:1}
+.search{position:relative;min-width:200px;flex:1;max-width:340px}
+.search input{width:100%;padding-left:34px}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.muted{color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:13px;font-weight:600;background:var(--surface-2)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.info{background:var(--info-soft);color:var(--info)}
+.hint{font-size:13px;color:var(--muted)}
+kbd{font-family:inherit;font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--surface)}
+
+/* ---------- tables ---------- */
+.tbl-wrap{overflow:auto;max-height:calc(100vh - 230px);border-radius:var(--r)}
+table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px}
+.grid th,.grid td{border-bottom:1px solid var(--line);padding:0;text-align:center;white-space:nowrap;background:var(--surface)}
+.grid thead th{position:sticky;top:0;z-index:3;background:var(--surface-2);font-weight:600;font-size:13px;padding:8px 6px;color:var(--muted)}
+.grid tfoot td{position:sticky;bottom:0;z-index:2;background:var(--surface-2);font-weight:600;padding:8px 6px;font-size:13px}
+.grid .c-no{position:sticky;left:0;z-index:2;width:52px;min-width:52px;color:var(--muted);padding:0 6px}
+.grid .c-name{position:sticky;left:52px;z-index:2;text-align:left;padding:0 12px;min-width:190px;max-width:260px;overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--line)}
+.grid thead .c-no,.grid thead .c-name,.grid tfoot .c-no,.grid tfoot .c-name{z-index:4}
+.grid tbody tr:hover td{background:var(--surface-2)}
+.grid td.num{padding:8px 10px;font-variant-numeric:tabular-nums}
+.grid .total{font-weight:700}
+.task-h{display:flex;flex-direction:column;align-items:center;gap:1px;border:0;background:none;padding:2px 6px;border-radius:7px;color:var(--text);min-width:76px;max-width:130px}
+.task-h:hover{background:var(--brand-soft)}
+.task-h b{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.task-h small{color:var(--muted);font-weight:500;font-size:11.5px}
+.cat-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.cell{width:100%;min-width:64px;height:40px;border:0;background:transparent;text-align:center;font-variant-numeric:tabular-nums;font-size:15px;outline:none}
+.cell:focus{background:var(--brand-soft);box-shadow:inset 0 0 0 2px var(--brand);border-radius:4px}
+.cell.err{background:var(--bad-soft);color:var(--bad);font-weight:700}
+.cell::placeholder{color:var(--line)}
+.grade{display:inline-grid;place-items:center;min-width:38px;height:26px;border-radius:7px;font-weight:700;font-size:13.5px;padding:0 6px}
+.g4{background:var(--ok-soft);color:var(--ok)} .g3{background:var(--info-soft);color:var(--info)}
+.g2{background:var(--warn-soft);color:var(--warn)} .g1,.g0{background:var(--bad-soft);color:var(--bad)}
+
+/* ---------- attendance ---------- */
+.att-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.datebox{display:flex;align-items:center;gap:4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:6px 12px;min-width:52px;min-height:36px;font-weight:600;font-size:13.5px;color:var(--muted);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"].P{background:var(--ok);color:#fff}
+.seg button[aria-pressed="true"].A{background:var(--bad);color:#fff}
+.seg button[aria-pressed="true"].L{background:var(--info);color:#fff}
+.seg button[aria-pressed="true"].S{background:var(--warn);color:#fff}
+.att-list td{padding:6px 10px}
+.att-list td.c-name{padding:0 12px}
+.dot{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;font-size:12px;font-weight:700}
+.dot.P{background:var(--ok-soft);color:var(--ok)} .dot.A{background:var(--bad);color:#fff}
+.dot.L{background:var(--info-soft);color:var(--info)} .dot.S{background:var(--warn-soft);color:var(--warn)}
+.date-h{border:0;background:none;color:inherit;font:inherit;font-weight:600;padding:2px 4px;border-radius:6px}
+.date-h:hover,.date-h.on{background:var(--brand-soft);color:var(--brand)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{padding:14px 16px}
+.stat small{color:var(--muted);font-weight:500;display:block}
+.stat b{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ---------- bonus ---------- */
+.bonus-layout{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+.quick{display:flex;gap:6px;justify-content:flex-end;padding:6px 10px}
+.quick .btn{min-width:44px;justify-content:center}
+.plus{color:var(--ok);font-weight:700} .minus{color:var(--bad);font-weight:700}
+.log{max-height:calc(100vh - 260px);overflow:auto}
+.log-item{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.log-item:last-child{border-bottom:0}
+.log-item .who{flex:1;min-width:0}
+.log-item .who b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-item .who small{color:var(--muted)}
+.pts{font-weight:700;font-variant-numeric:tabular-nums;min-width:40px;text-align:right}
+
+/* ---------- grade bar ---------- */
+.dist{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--surface-2);margin-top:8px}
+.dist span{height:100%}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
+
+/* ---------- students ---------- */
+.stu-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+.stu-in{border:1px solid transparent;background:transparent;border-radius:7px;padding:7px 9px;width:100%}
+.stu-in:hover{border-color:var(--line)}
+.stu-in:focus{border-color:var(--brand);background:var(--surface);outline:none}
+.pad{padding:16px}
+h2{font-size:17px;margin:0 0 4px} h3{font-size:15px;margin:0 0 8px}
+
+/* ---------- empty ---------- */
+.empty{text-align:center;padding:56px 20px}
+.empty .big{font-size:46px;line-height:1}
+.empty h2{font-size:21px;margin:14px 0 6px}
+.empty p{color:var(--muted);margin:0 auto 18px;max-width:420px}
+.empty .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ---------- dialog / menu / toast ---------- */
+dialog{border:0;border-radius:18px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(440px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(10,12,25,.45);backdrop-filter:blur(2px)}
+.dlg{padding:20px}
+.dlg h2{margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:13.5px;font-weight:600}
+.field .ctl{width:100%}
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.dlg-foot .left{margin-right:auto}
+.menu{position:relative}
+.menu-pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:230px;display:none;z-index:30}
+.menu-pop.open{display:block}
+.menu-pop button,.menu-pop label{display:flex;width:100%;gap:8px;align-items:center;border:0;background:none;padding:9px 12px;border-radius:8px;text-align:left;cursor:pointer;font-size:14px}
+.menu-pop button:hover,.menu-pop label:hover{background:var(--surface-2)}
+.menu-pop hr{border:0;border-top:1px solid var(--line);margin:5px 0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:500;opacity:0;pointer-events:none;transition:.2s;z-index:100;display:flex;gap:12px;align-items:center}
+#toast.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#toast button{border:0;background:none;color:var(--brand);font-weight:700;padding:0}
+.saved{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:5px;border:0;background:none;padding:6px 8px;border-radius:8px}
+.saved:hover{background:var(--surface-2);color:var(--text)}
+.saved i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+
+@media (max-width:900px){
+  .bonus-layout,.stu-layout{grid-template-columns:1fr}
+  .tbl-wrap{max-height:none}
+  .log{max-height:360px}
+}
+@media (max-width:560px){
+  .logo span{display:none}
+  .grid .c-name{min-width:130px;max-width:150px;padding:0 8px}
+  .grid .c-no{width:40px;min-width:40px}
+  .grid .c-name{left:40px}
+  .seg button{min-width:42px;padding:6px 8px}
+  .saved{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  header.top,.toolbar,.no-print{display:none!important}
+  .tbl-wrap{max-height:none;overflow:visible}
+  .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="logo"><i aria-hidden="true">✓</i><span>สมุดคะแนน</span></div>
+    <div class="class-pick" id="classPick"></div>
+    <button class="saved" id="saved" data-act="connect" aria-live="polite" title="ตั้งค่าการเชื่อมต่อ Google Sheet"><i></i>บันทึกอัตโนมัติ</button>
+    <div class="menu">
+      <button class="btn icon-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-label="เมนูเพิ่มเติม">⋯</button>
+      <div class="menu-pop" id="menuPop" role="menu">
+        <button data-act="newClass" role="menuitem">＋ เพิ่มห้องเรียน</button>
+        <button data-act="editClass" role="menuitem">✎ แก้ไขชื่อห้อง/วิชา</button>
+        <hr>
+        <button data-act="csv" role="menuitem">⬇ ส่งออกสรุปคะแนน (Excel/CSV)</button>
+        <button data-act="backup" role="menuitem">💾 สำรองข้อมูลทั้งหมด (.json)</button>
+        <label role="menuitem">📂 กู้คืนจากไฟล์สำรอง<input type="file" accept=".json,application/json" id="restoreFile" hidden></label>
+        <button data-act="print" role="menuitem">🖨 พิมพ์หน้านี้</button>
+        <hr>
+        <button data-act="connect" role="menuitem">🔗 เชื่อมต่อ Google Sheet</button>
+        <button data-act="theme" role="menuitem">◐ สลับโหมดมืด/สว่าง</button>
+        <button data-act="delClass" role="menuitem" class="danger" style="color:var(--bad)">🗑 ลบห้องนี้</button>
+      </div>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs" aria-label="ส่วนของสมุดคะแนน">
+    <button role="tab" data-tab="scores">📝 คะแนน</button>
+    <button role="tab" data-tab="att">📅 เช็คชื่อ</button>
+    <button role="tab" data-tab="bonus">⭐ คะแนนเสริม</button>
+    <button role="tab" data-tab="sum">📊 สรุปผล</button>
+    <button role="tab" data-tab="stu">👥 นักเรียน</button>
+  </nav>
+</header>
+
+<main id="view" tabindex="-1"></main>
+
+<dialog id="dlg"><form method="dialog" class="dlg" id="dlgForm"></form></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ================= state ================= */
+const KEY = 'scorebook.v1';
+const CATS = {
+  work:  {name:'งาน/การบ้าน', color:'#4f46e5'},
+  ex:    {name:'แบบฝึกหัด',  color:'#0ea5e9'},
+  quiz:  {name:'สอบย่อย',    color:'#f59e0b'},
+  mid:   {name:'สอบกลางภาค', color:'#ec4899'},
+  final: {name:'สอบปลายภาค', color:'#dc2626'},
+  att:   {name:'จิตพิสัย',    color:'#16a34a'}
+};
+const ATT = {P:'มา', A:'ขาด', L:'ลา', S:'สาย'};
+const GRADE_COLORS = {'4':'#16a34a','3.5':'#22c55e','3':'#0ea5e9','2.5':'#38bdf8','2':'#f59e0b','1.5':'#fb923c','1':'#f87171','0':'#dc2626'};
+
+let S = load();
+let tab = 'scores';
+let attDate = today();
+let query = '';
+let bonusReason = 'ตอบคำถาม';
+let undoFn = null;
+
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && Array.isArray(d.classes)) return d; }catch(e){}
+  return {classes:[], cur:null};
+}
+let saveTimer;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+    if(API) syncSoon(); else setStatus('local');
+  }, 200);
+}
+
+/* ---------- Google Sheet sync (Apps Script web app) ---------- */
+const API_KEY = 'scorebook.api', BASE_KEY = 'scorebook.syncbase';
+let API = (()=>{ try{ const a=JSON.parse(localStorage.getItem(API_KEY)); return a&&a.url ? a : null; }catch(e){ return null; } })();
+let base = (()=>{ try{ return JSON.parse(localStorage.getItem(BASE_KEY))||{}; }catch(e){ return {}; } })();
+let syncTimer, syncing = false, syncAgain = false, lastErr = null;
+const hash = s => { let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))|0; return (h>>>0).toString(36)+'.'+s.length; };
+const metaObj = () => ({cur:S.cur, order:S.classes.map(c=>c.id)});
+function setStatus(kind, extra){
+  const el = document.getElementById('saved');
+  const t = new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  const m = {
+    local:   ['var(--warn)', 'บันทึกในเครื่องนี้ · เชื่อม Google Sheet'],
+    syncing: ['var(--info)', 'กำลังบันทึกลง Google Sheet…'],
+    loading: ['var(--info)', 'กำลังโหลดจาก Google Sheet…'],
+    ok:      ['var(--ok)',   'บันทึกลง Google Sheet แล้ว ' + t],
+    err:     ['var(--bad)',  '⚠ ยังไม่ได้บันทึกลง Sheet (' + (extra||'ออฟไลน์') + ') · ลองใหม่']
+  }[kind];
+  el.innerHTML = `<i style="background:${m[0]}"></i>${m[1]}`;
+  el.dataset.kind = kind;
+}
+async function api(body){
+  const r = await fetch(API.url, {method:'POST', body: JSON.stringify({...body, pin: API.pin})});
+  let j; try{ j = await r.json(); }catch(e){ throw {error:'bad_response'}; }
+  if(!j.ok) throw j;
+  return j;
+}
+function pending(){
+  const changed = S.classes.filter(c => base[c.id] !== hash(JSON.stringify(c)));
+  const deleted = Object.keys(base).filter(id => id!=='__meta' && !S.classes.some(c=>c.id===id));
+  const metaChanged = base.__meta !== hash(JSON.stringify(metaObj()));
+  return {changed, deleted, metaChanged, any: changed.length || deleted.length || metaChanged};
+}
+function syncSoon(){ clearTimeout(syncTimer); setStatus('syncing'); syncTimer = setTimeout(syncNow, 1200); }
+async function syncNow(){
+  if(!API) return;
+  if(syncing){ syncAgain = true; return; }
+  const p = pending();
+  if(!p.any){ setStatus('ok'); return; }
+  syncing = true; setStatus('syncing');
+  const sent = p.changed.map(c => JSON.stringify(c));
+  const meta = metaObj(), metaStr = JSON.stringify(meta);
+  try{
+    await api({action:'save', classes: sent.map(s=>JSON.parse(s)), deleted: p.deleted, meta});
+    p.changed.forEach((c,i)=> base[c.id] = hash(sent[i]));
+    p.deleted.forEach(id => delete base[id]);
+    base.__meta = hash(metaStr);
+    try{ localStorage.setItem(BASE_KEY, JSON.stringify(base)); }catch(e){}
+    lastErr = null; setStatus('ok');
+  }catch(e){
+    lastErr = e; setStatus('err', e?.error==='pin' ? 'รหัสไม่ถูกต้อง' : 'ออฟไลน์');
+    clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 30000);   // retry later
+  }
+  syncing = false;
+  if(syncAgain){ syncAgain = false; syncNow(); }
+}
+async function pullFromSheet(){
+  if(!API || syncing) return;
+  if(pending().any){ await syncNow(); if(lastErr) return; }
+  setStatus('loading');
+  try{
+    const j = await api({action:'load'});
+    const list = j.classes || [], order = j.meta?.order || [];
+    list.sort((a,b)=>(order.indexOf(a.id)+1||1e9)-(order.indexOf(b.id)+1||1e9));
+    if(pending().any) return syncNow();           // user edited while loading; push first
+    base = {}; list.forEach(c=> base[c.id] = hash(JSON.stringify(c)));
+    const before = JSON.stringify(S.classes);
+    S = {classes:list, cur: list.some(c=>c.id===S.cur) ? S.cur : (j.meta?.cur && list.some(c=>c.id===j.meta.cur) ? j.meta.cur : list[0]?.id || null)};
+    base.__meta = hash(JSON.stringify(metaObj()));
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem(BASE_KEY, JSON.stringify(base)); }catch(e){}
+    if(JSON.stringify(S.classes)!==before && !document.activeElement?.matches('input,textarea')) render();
+    setStatus('ok');
+  }catch(e){ lastErr = e; setStatus('err', e?.error==='pin' ? 'รหัสไม่ถูกต้อง' : 'ออฟไลน์'); }
+}
+function connectDialog(){
+  openDialog(`<h2>เชื่อมต่อ Google Sheet</h2>
+    <p class="hint" style="margin-top:0">วางลิงก์ Web app จาก Apps Script (ลงท้ายด้วย <b>/exec</b>) และรหัส PIN ที่ตั้งไว้ใน Code.gs — ตั้งค่าครั้งเดียวต่อเครื่อง</p>
+    <div class="field"><label for="f_url">ลิงก์ Web app</label><input class="ctl" id="f_url" required placeholder="https://script.google.com/macros/s/…/exec" value="${esc(API?.url||'')}"></div>
+    <div class="field"><label for="f_pin">รหัส PIN</label><input class="ctl" id="f_pin" type="password" required autocomplete="current-password" value="${esc(API?.pin||'')}"></div>
+    <p class="hint" id="f_msg" role="alert"></p>
+    <div class="dlg-foot">${API?'<button type="button" class="btn danger left" id="disc">ยกเลิกการเชื่อมต่อ</button>':''}<button type="button" class="btn" data-close>ปิด</button><button class="btn pri" id="f_go">เชื่อมต่อ</button></div>`,
+  f=>{
+    const url=f.f_url.value.trim(), pin=f.f_pin.value;
+    const msg=document.getElementById('f_msg'), go=document.getElementById('f_go');
+    if(!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)){ msg.textContent='⚠ ลิงก์ต้องเป็นของ script.google.com'; return false; }
+    go.disabled=true; msg.textContent='กำลังทดสอบการเชื่อมต่อ…';
+    const prev = API; API = {url, pin};
+    api({action:'ping'}).then(()=>{
+      try{ localStorage.setItem(API_KEY, JSON.stringify(API)); }catch(e){}
+      if(!prev || prev.url!==url){ base = {}; try{ localStorage.removeItem(BASE_KEY); }catch(e){} }
+      closeDialog(); toast('เชื่อมต่อ Google Sheet แล้ว'); pullFromSheet();
+    }).catch(e=>{
+      API = prev; go.disabled=false;
+      msg.textContent = e?.error==='pin' ? '⚠ รหัส PIN ไม่ถูกต้อง' : '⚠ เชื่อมต่อไม่ได้ — ตรวจลิงก์ และตั้งสิทธิ์ Web app เป็น "Anyone"';
+    });
+    return false;
+  });
+  document.getElementById('disc')?.addEventListener('click', ()=>{
+    API=null; base={}; try{ localStorage.removeItem(API_KEY); localStorage.removeItem(BASE_KEY); }catch(e){}
+    closeDialog(); setStatus('local'); toast('ยกเลิกการเชื่อมต่อแล้ว (ข้อมูลยังอยู่ในเครื่องนี้)');
+  });
+}
+const uid = () => Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+const C = () => S.classes.find(c => c.id === S.cur);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function today(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+const fmtDate = (iso, opt={day:'numeric',month:'short'}) => new Date(iso+'T00:00:00').toLocaleDateString('th-TH', opt);
+const r1 = n => Math.round(n*100)/100;
+const fmt = n => (n==null||isNaN(n)) ? '–' : (Number.isInteger(r1(n)) ? String(r1(n)) : r1(n).toFixed(r1(n)*10%1?2:1));
+
+function newClass(name, subject){
+  return {id:uid(), name, subject:subject||'', students:[], tasks:[], scores:{}, attendance:{}, bonus:[]};
+}
+function sortedStudents(c){
+  return [...c.students].sort((a,b)=>(+a.no||9999)-(+b.no||9999) || a.name.localeCompare(b.name,'th'));
+}
+function visibleStudents(c){
+  const q = query.trim().toLowerCase();
+  const list = sortedStudents(c);
+  return q ? list.filter(s => (s.name+' '+s.code+' '+s.no).toLowerCase().includes(q)) : list;
+}
+
+/* ================= calculations ================= */
+function gradeOf(p){
+  if(p>=80) return '4'; if(p>=75) return '3.5'; if(p>=70) return '3'; if(p>=65) return '2.5';
+  if(p>=60) return '2'; if(p>=55) return '1.5'; if(p>=50) return '1'; return '0';
+}
+function bonusOf(c, sid){ let t=0; for(const b of c.bonus) if(b.sid===sid) t+=b.pts; return t; }
+function attOf(c, sid){
+  const r = {P:0,A:0,L:0,S:0,days:0};
+  for(const d in c.attendance){ const v=c.attendance[d][sid]; if(v){ r[v]++; r.days++; } }
+  r.pct = r.days ? (r.P + r.S) / r.days * 100 : null;
+  return r;
+}
+function maxTotal(c){ return c.tasks.reduce((a,t)=>a+(+t.max||0),0); }
+function statOf(c, s){
+  let raw = 0;
+  for(const t of c.tasks){ const v = c.scores[t.id]?.[s.id]; if(v!=null && v!=='') raw += +v; }
+  const bonus = bonusOf(c, s.id);
+  const max = maxTotal(c);
+  const total = raw + bonus;
+  const pct = max ? Math.min(100, total/max*100) : 0;
+  const att = attOf(c, s.id);
+  const ms = att.pct!=null && att.pct < 80;
+  return {raw, bonus, total, max, pct, grade: max ? gradeOf(pct) : null, att, ms};
+}
+
+/* ================= render shell ================= */
+function render(){
+  renderClassPick();
+  document.querySelectorAll('#tabs button').forEach(b=>{
+    b.setAttribute('aria-selected', b.dataset.tab===tab);
+  });
+  const c = C();
+  document.getElementById('tabs').style.display = c ? '' : 'none';
+  const v = document.getElementById('view');
+  if(!c){ v.innerHTML = emptyView(); return; }
+  ({scores:viewScores, att:viewAtt, bonus:viewBonus, sum:viewSum, stu:viewStu})[tab](v, c);
+}
+function renderClassPick(){
+  const el = document.getElementById('classPick');
+  if(!S.classes.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<label class="sr" for="classSel">เลือกห้องเรียน</label>
+    <select class="ctl" id="classSel">${S.classes.map(c=>`<option value="${c.id}" ${c.id===S.cur?'selected':''}>${esc(c.name)}${c.subject?' · '+esc(c.subject):''}</option>`).join('')}</select>
+    <button class="btn icon-btn" data-act="newClass" title="เพิ่มห้องเรียน" aria-label="เพิ่มห้องเรียน">＋</button>`;
+}
+function emptyView(){
+  return `<div class="card empty">
+    <div class="big" aria-hidden="true">📚</div>
+    <h2>เริ่มสมุดคะแนนเล่มแรก</h2>
+    <p>สร้างห้องเรียน เพิ่มรายชื่อนักเรียน แล้วเริ่มกรอกคะแนน เช็คชื่อ และให้คะแนนเสริมได้ทันที ข้อมูลบันทึกอัตโนมัติในเครื่องนี้</p>
+    <div class="row">
+      <button class="btn pri" data-act="newClass">＋ สร้างห้องเรียน</button>
+      <button class="btn" data-act="demo">ลองด้วยข้อมูลตัวอย่าง</button>
+    </div></div>`;
+}
+const searchBox = () => `<div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  <label class="sr" for="q">ค้นหานักเรียน</label><input class="ctl" id="q" placeholder="ค้นหาชื่อ / เลขที่" value="${esc(query)}"></div>`;
+const noStudents = () => `<div class="card empty"><div class="big" aria-hidden="true">👥</div><h2>ยังไม่มีรายชื่อนักเรียน</h2>
+  <p>เพิ่มรายชื่อทีละคน หรือวางรายชื่อจาก Excel ได้ทีเดียวทั้งห้อง</p>
+  <div class="row"><button class="btn pri" data-goto="stu">ไปที่หน้าเพิ่มนักเรียน</button></div></div>`;
+
+/* ================= scores ================= */
+function viewScores(v, c){
+  if(!c.students.length){ v.innerHTML = noStudents(); return; }
+  const list = visibleStudents(c);
+  const max = maxTotal(c);
+  v.innerHTML = `
+  <div class="toolbar">
+    ${searchBox()}
+    <span class="hint grow">กรอกแล้วกด <kbd>Enter</kbd> ลงคนถัดไป · ลูกศรเลื่อนช่อง</span>
+    <button class="btn pri" data-act="addTask">＋ เพิ่มงาน</button>
+  </div>
+  ${!c.tasks.length ? `<div class="card empty"><div class="big" aria-hidden="true">📝</div><h2>ยังไม่มีงาน</h2><p>เพิ่มงาน การบ้าน หรือการสอบ พร้อมคะแนนเต็ม แล้วกรอกคะแนนได้ทันที</p><div class="row"><button class="btn pri" data-act="addTask">＋ เพิ่มงานแรก</button></div></div>` : `
+  <div class="card tbl-wrap">
+  <table class="grid" id="scoreGrid">
+    <thead><tr>
+      <th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
+      ${c.tasks.map(t=>`<th><button class="task-h" data-task="${t.id}" title="แก้ไขงาน"><b><span class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></span>${esc(t.name)}</b><small>เต็ม ${fmt(+t.max)}</small></button></th>`).join('')}
+      <th>เสริม</th><th>รวม<br><small>/${fmt(max)}</small></th><th>%</th><th>เกรด</th>
+    </tr></thead>
+    <tbody>
+    ${list.map((s,r)=>{ const st=statOf(c,s); return `<tr data-sid="${s.id}">
+      <td class="c-no">${esc(s.no)}</td><td class="c-name" title="${esc(s.name)}">${esc(s.name)}</td>
+      ${c.tasks.map((t,ci)=>{ const val=c.scores[t.id]?.[s.id]; const bad = val!=null && val!=='' && +val>+t.max;
+        return `<td><input class="cell${bad?' err':''}" inputmode="decimal" autocomplete="off" aria-label="${esc(s.name)} ${esc(t.name)}" data-r="${r}" data-c="${ci}" data-t="${t.id}" value="${val??''}" placeholder="·"></td>`}).join('')}
+      <td class="num b-bonus">${st.bonus? '<span class="plus">+'+fmt(st.bonus)+'</span>':'<span class="muted">–</span>'}</td>
+      <td class="num total b-total">${fmt(st.total)}</td>
+      <td class="num b-pct">${fmt(st.pct)}</td>
+      <td class="num b-grade">${gradeBadge(st.grade)}</td></tr>`}).join('')}
+    </tbody>
+    <tfoot><tr><td class="c-no"></td><td class="c-name">ค่าเฉลี่ย</td>
+      ${c.tasks.map(t=>`<td class="num" data-avg="${t.id}">${fmt(taskAvg(c,t))}</td>`).join('')}
+      <td></td><td class="num" id="avgTotal">${fmt(classAvg(c,'total'))}</td><td class="num" id="avgPct">${fmt(classAvg(c,'pct'))}</td><td></td></tr></tfoot>
+  </table></div>`}`;
+}
+const gradeBadge = g => g==null ? '–' : `<span class="grade g${Math.floor(+g)}">${g}</span>`;
+function taskAvg(c,t){
+  const vals = c.students.map(s=>c.scores[t.id]?.[s.id]).filter(v=>v!=null&&v!=='').map(Number);
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+}
+function classAvg(c,key){
+  if(!c.students.length) return null;
+  return c.students.reduce((a,s)=>a+statOf(c,s)[key],0)/c.students.length;
+}
+function onScoreInput(inp){
+  const c = C(); const tid = inp.dataset.t; const sid = inp.closest('tr').dataset.sid;
+  const t = c.tasks.find(x=>x.id===tid);
+  let raw = inp.value.trim().replace(',', '.');
+  if(raw===''){ if(c.scores[tid]) delete c.scores[tid][sid]; inp.classList.remove('err'); }
+  else{
+    const n = Number(raw);
+    if(isNaN(n) || n<0){ inp.classList.add('err'); return; }
+    inp.classList.toggle('err', n > +t.max);
+    (c.scores[tid] ||= {})[sid] = n;
+  }
+  const tr = inp.closest('tr'); const s = c.students.find(x=>x.id===sid); const st = statOf(c,s);
+  tr.querySelector('.b-total').textContent = fmt(st.total);
+  tr.querySelector('.b-pct').textContent = fmt(st.pct);
+  tr.querySelector('.b-grade').innerHTML = gradeBadge(st.grade);
+  const avg = document.querySelector(`[data-avg="${tid}"]`); if(avg) avg.textContent = fmt(taskAvg(c,t));
+  document.getElementById('avgTotal').textContent = fmt(classAvg(c,'total'));
+  document.getElementById('avgPct').textContent = fmt(classAvg(c,'pct'));
+  save();
+}
+function moveCell(from, dr, dc){
+  const r = +from.dataset.r + dr, ci = +from.dataset.c + dc;
+  const next = document.querySelector(`#scoreGrid .cell[data-r="${r}"][data-c="${ci}"]`);
+  if(next){ next.focus(); next.select(); return true; }
+  return false;
+}
+
+/* ---------- task dialog ---------- */
+function taskDialog(task){
+  const c = C(); const isNew = !task;
+  task ||= {name:'งานที่ '+(c.tasks.length+1), max:10, cat:'work'};
+  openDialog(`<h2>${isNew?'เพิ่มงานใหม่':'แก้ไขงาน'}</h2>
+    <div class="field"><label for="f_name">ชื่องาน</label><input class="ctl" id="f_name" required maxlength="60" value="${esc(task.name)}"></div>
+    <div class="field"><label for="f_max">คะแนนเต็ม</label><input class="ctl" id="f_max" type="number" min="0.5" step="0.5" required value="${task.max}"></div>
+    <div class="field"><label for="f_cat">ประเภท</label><select class="ctl" id="f_cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${k===task.cat?'selected':''}>${v.name}</option>`).join('')}</select></div>
+    <div class="dlg-foot">${isNew?'':'<button type="button" class="btn danger left" id="delTask">ลบงานนี้</button>'}
+      <button type="button" class="btn" value="cancel" data-close>ยกเลิก</button><button class="btn pri" value="ok">บันทึก</button></div>`,
+    f=>{
+      const name=f.f_name.value.trim(), max=+f.f_max.value;
+      if(!name || !(max>0)) return false;
+      if(isNew){ c.tasks.push({id:uid(), name, max, cat:f.f_cat.value}); }
+      else Object.assign(c.tasks.find(t=>t.id===task.id), {name, max, cat:f.f_cat.value});
+      save(); render();
+      if(isNew) setTimeout(()=>{ const ci=c.tasks.length-1; const el=document.querySelector(`#scoreGrid .cell[data-r="0"][data-c="${ci}"]`); el?.focus(); el?.scrollIntoView({block:'nearest',inline:'center'}); },30);
+    });
+  document.getElementById('f_name').select();
+  document.getElementById('delTask')?.addEventListener('click', ()=>{
+    const idx = c.tasks.findIndex(t=>t.id===task.id); const removed = c.tasks[idx]; const sc = c.scores[task.id];
+    c.tasks.splice(idx,1); delete c.scores[task.id]; closeDialog(); save(); render();
+    toast(`ลบ “${removed.name}” แล้ว`, ()=>{ c.tasks.splice(idx,0,removed); if(sc) c.scores[removed.id]=sc; save(); render(); });
+  });
+}
+
+/* ================= attendance ================= */
+function viewAtt(v, c){
+  if(!c.students.length){ v.innerHTML = noStudents(); return; }
+  const day = c.attendance[attDate] || {};
+  const list = visibleStudents(c);
+  const cnt = {P:0,A:0,L:0,S:0}; let none=0;
+  c.students.forEach(s=> day[s.id] ? cnt[day[s.id]]++ : none++);
+  const dates = Object.keys(c.attendance).sort();
+  v.innerHTML = `
+  <div class="toolbar att-head">
+    <div class="datebox">
+      <button class="btn icon-btn" data-day="-1" aria-label="วันก่อนหน้า">‹</button>
+      <label class="sr" for="attDate">วันที่เช็คชื่อ</label>
+      <input type="date" class="ctl" id="attDate" value="${attDate}">
+      <button class="btn icon-btn" data-day="1" aria-label="วันถัดไป">›</button>
+      ${attDate!==today()?'<button class="btn sm ghost" data-day="0">วันนี้</button>':''}
+    </div>
+    ${searchBox()}
+    <div class="grow"></div>
+    <button class="btn pri" data-act="allPresent">✓ มาทั้งหมด</button>
+    ${c.attendance[attDate]?'<button class="btn danger" data-act="clearDay">ล้างวันนี้</button>':''}
+  </div>
+  <div class="stats">
+    <div class="card stat"><small>${fmtDate(attDate,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</small><b>${c.students.length-none}<span class="muted" style="font-size:15px"> / ${c.students.length} เช็คแล้ว</span></b></div>
+    <div class="card stat"><small>มา</small><b style="color:var(--ok)">${cnt.P}</b></div>
+    <div class="card stat"><small>ขาด</small><b style="color:var(--bad)">${cnt.A}</b></div>
+    <div class="card stat"><small>ลา</small><b style="color:var(--info)">${cnt.L}</b></div>
+    <div class="card stat"><small>สาย</small><b style="color:var(--warn)">${cnt.S}</b></div>
+  </div>
+  <div class="card tbl-wrap" style="margin-bottom:18px">
+  <table class="grid att-list"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th><th>สถานะวันนี้</th><th>มาเรียน (สะสม)</th></tr></thead><tbody>
+  ${list.map(s=>{ const cur=day[s.id]; const a=attOf(c,s.id); return `<tr data-sid="${s.id}">
+    <td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
+    <td><div class="seg" role="group" aria-label="สถานะของ ${esc(s.name)}">${Object.entries(ATT).map(([k,n])=>`<button class="${k}" data-att="${k}" aria-pressed="${cur===k}">${n}</button>`).join('')}</div></td>
+    <td>${a.pct==null?'<span class="muted">–</span>':`<span class="chip ${a.pct<80?'bad':'ok'}">${fmt(a.pct)}%</span> <span class="hint">ขาด ${a.A} · ลา ${a.L} · สาย ${a.S}</span>`}</td></tr>`}).join('')}
+  </tbody></table></div>
+  ${dates.length?`<h3>ประวัติการเช็คชื่อ (${dates.length} วัน)</h3>
+  <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
+  ${dates.map(d=>`<th><button class="date-h ${d===attDate?'on':''}" data-date="${d}">${fmtDate(d)}</button></th>`).join('')}<th>มา%</th></tr></thead><tbody>
+  ${list.map(s=>{const a=attOf(c,s.id); return `<tr><td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
+  ${dates.map(d=>{const x=c.attendance[d][s.id]; return `<td class="num">${x?`<span class="dot ${x}" title="${ATT[x]}">${ATT[x][0]}</span>`:'<span class="muted">·</span>'}</td>`}).join('')}
+  <td class="num">${a.pct==null?'–':`<span class="chip ${a.pct<80?'bad':'ok'}">${fmt(a.pct)}</span>`}</td></tr>`}).join('')}
+  </tbody></table></div>`:''}`;
+}
+
+/* ================= bonus ================= */
+function viewBonus(v, c){
+  if(!c.students.length){ v.innerHTML = noStudents(); return; }
+  const list = visibleStudents(c);
+  const byId = Object.fromEntries(c.students.map(s=>[s.id,s]));
+  const log = [...c.bonus].sort((a,b)=>b.ts-a.ts).slice(0,150);
+  v.innerHTML = `
+  <div class="toolbar">
+    ${searchBox()}
+    <div class="field" style="margin:0;flex:1;min-width:200px;max-width:320px">
+      <label class="sr" for="reason">เหตุผล</label>
+      <input class="ctl" id="reason" list="reasons" value="${esc(bonusReason)}" placeholder="เหตุผล เช่น ตอบคำถาม">
+      <datalist id="reasons"><option>ตอบคำถาม</option><option>ช่วยงานครู</option><option>จิตอาสา</option><option>ส่งงานเร็ว</option><option>ทำงานดีเด่น</option><option>ไม่ตั้งใจเรียน</option></datalist>
+    </div>
+    <span class="hint">กดปุ่มเพื่อให้คะแนนพร้อมเหตุผลนี้</span>
+  </div>
+  <div class="bonus-layout">
+    <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th><th>รวมคะแนนเสริม</th><th style="text-align:right;padding-right:14px">ให้คะแนน</th></tr></thead><tbody>
+    ${list.map(s=>{const b=bonusOf(c,s.id); return `<tr data-sid="${s.id}"><td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
+    <td class="num"><b class="${b>0?'plus':b<0?'minus':'muted'}">${b>0?'+':''}${fmt(b)}</b></td>
+    <td><div class="quick"><button class="btn sm" data-pts="-1" aria-label="หัก 1 คะแนน ${esc(s.name)}">−1</button><button class="btn sm" data-pts="1" aria-label="เพิ่ม 1 คะแนน ${esc(s.name)}">+1</button><button class="btn sm" data-pts="2" aria-label="เพิ่ม 2 คะแนน ${esc(s.name)}">+2</button><button class="btn sm" data-pts="5" aria-label="เพิ่ม 5 คะแนน ${esc(s.name)}">+5</button><button class="btn sm" data-pts="custom" aria-label="กำหนดคะแนนเอง ${esc(s.name)}">…</button></div></td></tr>`}).join('')}
+    </tbody></table></div>
+    <aside class="card">
+      <div class="pad" style="border-bottom:1px solid var(--line)"><h2>ประวัติคะแนนเสริม</h2><span class="hint">${c.bonus.length} รายการ · รวม ${fmt(c.bonus.reduce((a,b)=>a+b.pts,0))} คะแนน</span></div>
+      <div class="log">${log.length? log.map(b=>`<div class="log-item"><div class="who"><b>${esc(byId[b.sid]?.name||'(ลบแล้ว)')}</b><small>${esc(b.reason||'—')} · ${fmtDate(b.date)}</small></div>
+        <span class="pts ${b.pts>=0?'plus':'minus'}">${b.pts>0?'+':''}${fmt(b.pts)}</span>
+        <button class="btn sm ghost" data-delbonus="${b.id}" aria-label="ลบรายการ">✕</button></div>`).join('') : '<p class="pad muted" style="margin:0">ยังไม่มีรายการ</p>'}</div>
+    </aside>
+  </div>`;
+}
+function addBonus(sid, pts, reason){
+  const c = C(); const s = c.students.find(x=>x.id===sid);
+  const b = {id:uid(), sid, pts, reason: reason ?? bonusReason, date:today(), ts:Date.now()};
+  c.bonus.push(b); save(); render();
+  toast(`${s.name} ${pts>0?'+':''}${pts} คะแนน`, ()=>{ c.bonus = c.bonus.filter(x=>x.id!==b.id); save(); render(); });
+}
+
+/* ================= summary ================= */
+function viewSum(v, c){
+  if(!c.students.length){ v.innerHTML = noStudents(); return; }
+  const list = visibleStudents(c);
+  const all = sortedStudents(c).map(s=>({s, st:statOf(c,s)}));
+  const dist = {}; Object.keys(GRADE_COLORS).forEach(g=>dist[g]=0);
+  all.forEach(x=>{ if(x.st.grade) dist[x.st.grade]++; });
+  const ms = all.filter(x=>x.st.ms).length;
+  const avg = classAvg(c,'pct');
+  const passed = all.filter(x=>x.st.grade && +x.st.grade>=1).length;
+  const catTotals = {};
+  c.tasks.forEach(t=>{ catTotals[t.cat]=(catTotals[t.cat]||0)+(+t.max); });
+  v.innerHTML = `
+  <div class="stats">
+    <div class="card stat"><small>นักเรียน</small><b>${c.students.length}</b></div>
+    <div class="card stat"><small>งานทั้งหมด</small><b>${c.tasks.length} <span class="muted" style="font-size:14px">เต็ม ${fmt(maxTotal(c))}</span></b></div>
+    <div class="card stat"><small>เฉลี่ยทั้งห้อง</small><b>${fmt(avg)}%</b></div>
+    <div class="card stat"><small>ผ่าน (เกรด 1 ขึ้นไป)</small><b style="color:var(--ok)">${passed}</b></div>
+    <div class="card stat"><small>เวลาเรียนไม่ถึง 80% (มส)</small><b style="color:${ms?'var(--bad)':'inherit'}">${ms}</b></div>
+  </div>
+  <div class="card pad" style="margin-bottom:16px">
+    <h3 style="margin:0">การกระจายเกรด</h3>
+    <div class="dist" role="img" aria-label="การกระจายเกรด">${Object.entries(dist).reverse().filter(([,n])=>n).map(([g,n])=>`<span style="width:${n/c.students.length*100}%;background:${GRADE_COLORS[g]}" title="เกรด ${g}: ${n} คน"></span>`).join('')}</div>
+    <div class="legend">${Object.entries(dist).map(([g,n])=>`<span><i style="background:${GRADE_COLORS[g]}"></i>${g} : <b style="color:var(--text)">${n}</b></span>`).join('')}</div>
+    ${Object.keys(catTotals).length?`<div class="legend" style="margin-top:12px">สัดส่วนคะแนน: ${Object.entries(catTotals).map(([k,n])=>`<span><i style="background:${CATS[k]?.color}"></i>${CATS[k]?.name} ${fmt(n)}</span>`).join('')}</div>`:''}
+  </div>
+  <div class="toolbar">${searchBox()}<div class="grow"></div><button class="btn" data-act="print">🖨 พิมพ์</button><button class="btn pri" data-act="csv">⬇ ส่งออก Excel</button></div>
+  <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
+    <th>คะแนนงาน</th><th>เสริม</th><th>รวม / ${fmt(maxTotal(c))}</th><th>%</th><th>เกรด</th><th>มาเรียน</th><th>ส่งงาน</th><th>หมายเหตุ</th></tr></thead><tbody>
+  ${list.map(s=>{const st=statOf(c,s); const sent=c.tasks.filter(t=>{const v=c.scores[t.id]?.[s.id]; return v!=null&&v!==''}).length; const miss=c.tasks.length-sent;
+  return `<tr><td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
+    <td class="num">${fmt(st.raw)}</td><td class="num">${st.bonus?'<span class="plus">+'+fmt(st.bonus)+'</span>':'–'}</td>
+    <td class="num total">${fmt(st.total)}</td><td class="num">${fmt(st.pct)}</td><td class="num">${st.ms?'<span class="grade g0">มส</span>':gradeBadge(st.grade)}</td>
+    <td class="num">${st.att.pct==null?'–':`<span class="chip ${st.ms?'bad':'ok'}">${fmt(st.att.pct)}%</span>`}</td>
+    <td class="num">${c.tasks.length?`${sent}/${c.tasks.length}`:'–'}</td>
+    <td class="num">${miss>0&&c.tasks.length?`<span class="chip warn">ค้าง ${miss} งาน</span>`:''}${st.ms?' <span class="chip bad">มส</span>':''}</td></tr>`}).join('')}
+  </tbody></table></div>
+  <p class="hint">เกณฑ์: 80+ = 4 · 75 = 3.5 · 70 = 3 · 65 = 2.5 · 60 = 2 · 55 = 1.5 · 50 = 1 · ต่ำกว่า 50 = 0 · คะแนนเสริมนำไปรวมกับคะแนนงาน (ไม่เกิน 100%) · มาเรียนนับ "มา" และ "สาย"; ต่ำกว่า 80% = มส</p>`;
+}
+
+/* ================= students ================= */
+function viewStu(v, c){
+  const list = sortedStudents(c);
+  v.innerHTML = `
+  <div class="stu-layout">
+    <div class="card">
+      <div class="pad" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)">
+        <div style="margin-right:auto"><h2>รายชื่อนักเรียน ${esc(c.name)}</h2><span class="hint">${c.students.length} คน · แก้ไขในช่องได้เลย</span></div>
+        <button class="btn pri" data-act="addStu">＋ เพิ่มนักเรียน</button>
+      </div>
+      ${list.length?`<div class="tbl-wrap" style="border-radius:0 0 var(--r) var(--r)"><table class="grid"><thead><tr><th style="width:80px">เลขที่</th><th style="width:130px">รหัส</th><th style="text-align:left">ชื่อ-สกุล</th><th style="width:60px"></th></tr></thead><tbody>
+      ${list.map(s=>`<tr data-sid="${s.id}">
+        <td><input class="stu-in" data-f="no" value="${esc(s.no)}" inputmode="numeric" aria-label="เลขที่" style="text-align:center"></td>
+        <td><input class="stu-in" data-f="code" value="${esc(s.code)}" aria-label="รหัสนักเรียน" style="text-align:center"></td>
+        <td><input class="stu-in" data-f="name" value="${esc(s.name)}" aria-label="ชื่อ-สกุล"></td>
+        <td><button class="btn sm ghost danger" data-delstu="${s.id}" aria-label="ลบ ${esc(s.name)}">✕</button></td></tr>`).join('')}
+      </tbody></table></div>`:'<p class="pad muted" style="margin:0">ยังไม่มีนักเรียน เพิ่มทีละคนหรือวางรายชื่อทางขวา</p>'}
+    </div>
+    <aside class="card pad">
+      <h2>วางรายชื่อจาก Excel</h2>
+      <p class="hint" style="margin-top:0">คัดลอกคอลัมน์จาก Excel/Google Sheets มาวางได้เลย บรรทัดละ 1 คน รูปแบบ <b>เลขที่ · รหัส · ชื่อ-สกุล</b> หรือมีแค่ชื่ออย่างเดียวก็ได้</p>
+      <label class="sr" for="bulk">รายชื่อนักเรียน</label>
+      <textarea class="ctl" id="bulk" placeholder="1	12345	ด.ช.สมชาย ใจดี&#10;2	12346	ด.ญ.สมหญิง รักเรียน"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn pri" data-act="bulkAdd">นำเข้ารายชื่อ</button></div>
+    </aside>
+  </div>`;
+}
+function parseBulk(text, startNo){
+  const out=[]; let n=startNo;
+  text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).forEach(line=>{
+    let parts = line.split('\t').map(x=>x.trim()).filter(Boolean);
+    if(parts.length===1){ const m = line.match(/^(\d{1,3})[\s.)]+(?:(\d{3,})\s+)?(.+)$/); if(m) parts=[m[1], m[2]||'', m[3]]; }
+    let no='', code='', name='';
+    if(parts.length>=3){ [no,code]=parts; name=parts.slice(2).join(' '); }
+    else if(parts.length===2){ if(/^\d{1,3}$/.test(parts[0])) [no,name]=parts; else if(/^\d+$/.test(parts[0])) [code,name]=parts; else name=parts.join(' '); }
+    else name=parts[0];
+    if(/^(เลขที่|ที่|no)$/i.test(no) || /^ชื่อ/.test(name)) return; // header row
+    out.push({id:uid(), no: no || String(++n), code, name});
+    if(no) n = Math.max(n, +no||n);
+  });
+  return out;
+}
+
+/* ================= dialog & toast ================= */
+const dlg = document.getElementById('dlg'), dlgForm = document.getElementById('dlgForm');
+let dlgSubmit = null;
+function openDialog(html, onSubmit){ dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.showModal(); }
+function closeDialog(){ dlg.close(); }
+function askConfirm(title, msg, okLabel, onOk){
+  openDialog(`<h2>${esc(title)}</h2><p class="muted" style="margin-top:0">${esc(msg)}</p>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>ยกเลิก</button><button class="btn pri">${esc(okLabel)}</button></div>`,
+    ()=>{ setTimeout(onOk,0); });
+}
+dlgForm.addEventListener('submit', e=>{
+  if(e.submitter?.value==='cancel') return;
+  e.preventDefault();
+  if(dlgSubmit && dlgSubmit(dlgForm.elements)===false) return;
+  closeDialog();
+});
+dlgForm.addEventListener('click', e=>{ if(e.target.matches('[data-close]')) closeDialog(); });
+dlg.addEventListener('click', e=>{ if(e.target===dlg) closeDialog(); });
+
+let toastTimer;
+function toast(msg, undo){
+  const t = document.getElementById('toast');
+  undoFn = undo || null;
+  t.innerHTML = esc(msg) + (undo ? ' <button id="undoBtn">เลิกทำ</button>' : '');
+  t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), undo?5000:2400);
+}
+document.getElementById('toast').addEventListener('click', e=>{
+  if(e.target.id==='undoBtn' && undoFn){ undoFn(); undoFn=null; document.getElementById('toast').classList.remove('show'); }
+});
+
+function classDialog(edit){
+  const c = edit ? C() : null;
+  openDialog(`<h2>${edit?'แก้ไขห้องเรียน':'เพิ่มห้องเรียน'}</h2>
+    <div class="field"><label for="f_cn">ชื่อห้อง</label><input class="ctl" id="f_cn" required maxlength="40" placeholder="เช่น ม.4/1" value="${esc(c?.name||'')}"></div>
+    <div class="field"><label for="f_sub">รายวิชา (ไม่บังคับ)</label><input class="ctl" id="f_sub" maxlength="60" placeholder="เช่น ส31101 สังคมศึกษา" value="${esc(c?.subject||'')}"></div>
+    ${!edit && C() ? `<label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;font-size:14px"><input type="checkbox" id="f_copy"> คัดลอกรายการงานจากห้อง ${esc(C().name)}</label>`:''}
+    <div class="dlg-foot"><button type="button" class="btn" data-close>ยกเลิก</button><button class="btn pri">บันทึก</button></div>`,
+  f=>{
+    const name=f.f_cn.value.trim(); if(!name) return false;
+    if(edit){ c.name=name; c.subject=f.f_sub.value.trim(); }
+    else{
+      const n = newClass(name, f.f_sub.value.trim());
+      if(f.f_copy?.checked) n.tasks = C().tasks.map(t=>({...t, id:uid()}));
+      S.classes.push(n); S.cur = n.id; tab = n.students.length ? 'scores' : 'stu';
+    }
+    save(); render();
+  });
+  document.getElementById('f_cn').focus();
+}
+
+/* ================= export / import ================= */
+async function download(name, content, type){
+  if(window.claude?.use){
+    const dl = await claude.use('downloads');
+    if(dl){
+      try{ await dl.save({filename:name, data:new Blob([content],{type})}); return true; }
+      catch(e){ if(e?.code==='declined') return false; toast('⚠ ดาวน์โหลดไม่สำเร็จ'); return false; }
+    }
+  }
+  const blob = new Blob([content], {type}); const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  return true;
+}
+function exportCSV(){
+  const c = C(); if(!c) return;
+  const q = v => { const s=String(v??''); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+  const head = ['เลขที่','รหัส','ชื่อ-สกุล', ...c.tasks.map(t=>`${t.name} (${t.max})`), 'คะแนนเสริม', `รวม (${maxTotal(c)})`, 'ร้อยละ', 'เกรด', 'มาเรียน%', 'ขาด', 'ลา', 'สาย'];
+  const rows = sortedStudents(c).map(s=>{ const st=statOf(c,s);
+    return [s.no, s.code, s.name, ...c.tasks.map(t=>c.scores[t.id]?.[s.id] ?? ''), st.bonus, r1(st.total), r1(st.pct), st.ms?'มส':(st.grade??''), st.att.pct==null?'':r1(st.att.pct), st.att.A, st.att.L, st.att.S]; });
+  const csv = '﻿' + [head, ...rows].map(r=>r.map(q).join(',')).join('\r\n');
+  download(`คะแนน_${c.name.replace(/[\\/:*?"<>|]/g,'-')}_${today()}.csv`, csv, 'text/csv;charset=utf-8')
+    .then(ok=>{ if(ok) toast('ส่งออกไฟล์แล้ว เปิดด้วย Excel ได้ทันที'); });
+}
+function backup(){ download(`สำรองสมุดคะแนน_${today()}.json`, JSON.stringify(S,null,1), 'application/json').then(ok=>{ if(ok) toast('สำรองข้อมูลแล้ว'); }); }
+document.getElementById('restoreFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; e.target.value=''; closeMenu(); if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if(!d || !Array.isArray(d.classes)) throw 0;
+    askConfirm(`กู้คืน ${d.classes.length} ห้องจากไฟล์นี้?`, 'ข้อมูลปัจจุบันในเครื่องจะถูกแทนที่', 'กู้คืน', ()=>{
+      S = d; S.cur ||= S.classes[0]?.id || null; save(); render(); toast('กู้คืนข้อมูลแล้ว'); });
+  }catch(err){ toast('⚠ ไฟล์ไม่ถูกต้อง'); }
+});
+
+function demo(){
+  const names = ['ด.ช.กิตติพัฒน์ ใจดี','ด.ญ.กัญญารัตน์ สุขสม','ด.ช.ณัฐพล แสงทอง','ด.ญ.ธนพร ศรีสุข','ด.ช.ปิยะพงษ์ บุญมา','ด.ญ.พิมพ์ชนก วงศ์ไทย','ด.ช.ภาณุวัฒน์ มีสุข','ด.ญ.มณีรัตน์ ทองดี','ด.ช.วรวุฒิ คงมั่น','ด.ญ.ศิริพร พรหมมา','ด.ช.สิทธิชัย จันทร์เพ็ญ','ด.ญ.อรอุมา แก้วใส'];
+  const c = newClass('ม.4/1 (ตัวอย่าง)', 'ส31101 สังคมศึกษา');
+  c.students = names.map((n,i)=>({id:uid(), no:String(i+1), code:String(30101+i), name:n}));
+  c.tasks = [{id:uid(),name:'ใบงาน 1',max:10,cat:'work'},{id:uid(),name:'แบบฝึกหัด 1',max:10,cat:'ex'},{id:uid(),name:'สอบย่อย',max:20,cat:'quiz'},{id:uid(),name:'กลางภาค',max:20,cat:'mid'}];
+  c.tasks.forEach(t=>{ c.scores[t.id]={}; c.students.forEach((s,i)=>{ if(Math.random()>.08) c.scores[t.id][s.id]=Math.max(0,Math.round((t.max*(.45+((i*37)%50)/100))*2)/2); }); });
+  for(let k=6;k>=1;k--){ const d=new Date(); d.setDate(d.getDate()-k*2); const iso=d.toISOString().slice(0,10); c.attendance[iso]={};
+    c.students.forEach((s,i)=>{ const r=(i*7+k*3)%17; c.attendance[iso][s.id]= r===0||(i===4&&k%2)?'A':r===5?'L':r===9?'S':'P'; }); }
+  c.bonus = [{id:uid(),sid:c.students[1].id,pts:2,reason:'ตอบคำถาม',date:today(),ts:Date.now()-5000},{id:uid(),sid:c.students[5].id,pts:1,reason:'ช่วยงานครู',date:today(),ts:Date.now()}];
+  S.classes.push(c); S.cur=c.id; tab='scores'; save(); render();
+}
+
+/* ================= events ================= */
+const menuBtn = document.getElementById('menuBtn'), menuPop = document.getElementById('menuPop');
+function closeMenu(){ menuPop.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false'); }
+menuBtn.addEventListener('click', e=>{ e.stopPropagation(); const o=menuPop.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); });
+document.addEventListener('click', e=>{ if(!menuPop.contains(e.target)) closeMenu(); });
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('[data-tab]'); if(!b) return; tab = b.dataset.tab; render(); window.scrollTo({top:0});
+});
+
+document.addEventListener('click', e=>{
+  const el = e.target.closest('[data-act],[data-goto],[data-task],[data-att],[data-day],[data-date],[data-pts],[data-delbonus],[data-delstu]');
+  if(!el) return;
+  const c = C(); const d = el.dataset;
+  if(d.goto){ tab=d.goto; render(); return; }
+  if(d.task){ taskDialog(c.tasks.find(t=>t.id===d.task)); return; }
+  if(d.att){
+    const sid = el.closest('tr').dataset.sid; const day = (c.attendance[attDate] ||= {});
+    if(day[sid]===d.att) delete day[sid]; else day[sid]=d.att;
+    if(!Object.keys(day).length) delete c.attendance[attDate];
+    save(); const y=window.scrollY; render(); window.scrollTo(0,y); return;
+  }
+  if(d.day!=null){ if(d.day==='0') attDate=today(); else { const x=new Date(attDate+'T00:00:00'); x.setDate(x.getDate()+ +d.day); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); attDate=x.toISOString().slice(0,10);} render(); return; }
+  if(d.date){ attDate=d.date; render(); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  if(d.pts){
+    const sid = el.closest('tr').dataset.sid;
+    if(d.pts==='custom'){
+      const s = c.students.find(x=>x.id===sid);
+      openDialog(`<h2>คะแนนเสริม: ${esc(s.name)}</h2>
+        <div class="field"><label for="f_pts">คะแนน (ใส่ค่าติดลบเพื่อหักคะแนน)</label><input class="ctl" id="f_pts" type="number" step="0.5" required value="3"></div>
+        <div class="field"><label for="f_rs">เหตุผล</label><input class="ctl" id="f_rs" list="reasons" value="${esc(bonusReason)}"></div>
+        <div class="dlg-foot"><button type="button" class="btn" data-close>ยกเลิก</button><button class="btn pri">ให้คะแนน</button></div>`,
+        f=>{ const p=+f.f_pts.value; if(!p) return false; setTimeout(()=>addBonus(sid,p,f.f_rs.value.trim()),0); });
+      document.getElementById('f_pts').select();
+    } else addBonus(sid, +d.pts);
+    return;
+  }
+  if(d.delbonus){
+    const i = c.bonus.findIndex(b=>b.id===d.delbonus); const b = c.bonus[i];
+    c.bonus.splice(i,1); save(); render(); toast('ลบรายการแล้ว', ()=>{ c.bonus.push(b); save(); render(); }); return;
+  }
+  if(d.delstu){
+    const i = c.students.findIndex(s=>s.id===d.delstu); const s=c.students[i];
+    c.students.splice(i,1); save(); render();
+    toast(`ลบ ${s.name} แล้ว`, ()=>{ c.students.splice(i,0,s); save(); render(); }); return;
+  }
+  closeMenu();
+  switch(d.act){
+    case 'newClass': classDialog(false); break;
+    case 'editClass': if(c) classDialog(true); break;
+    case 'demo': demo(); break;
+    case 'connect': connectDialog(); break;
+    case 'addTask': taskDialog(null); break;
+    case 'allPresent': { const day=(c.attendance[attDate] ||= {}); c.students.forEach(s=>{ if(!day[s.id]) day[s.id]='P'; }); save(); render(); toast('เช็คมาทุกคนที่ยังไม่ได้เช็คแล้ว'); break; }
+    case 'clearDay': { const old=c.attendance[attDate]; const dt=attDate; delete c.attendance[attDate]; save(); render(); toast('ล้างการเช็คชื่อวันนี้แล้ว', ()=>{ c.attendance[dt]=old; save(); render(); }); break; }
+    case 'addStu': {
+      const nextNo = String(c.students.reduce((m,s)=>Math.max(m,+s.no||0),0)+1);
+      const s = {id:uid(), no:nextNo, code:'', name:''}; c.students.push(s); save(); render();
+      setTimeout(()=>{ document.querySelector(`tr[data-sid="${s.id}"] [data-f="name"]`)?.focus(); },20); break; }
+    case 'bulkAdd': {
+      const txt = document.getElementById('bulk').value; const start = c.students.reduce((m,s)=>Math.max(m,+s.no||0),0);
+      const add = parseBulk(txt, start); if(!add.length){ toast('ไม่พบรายชื่อ'); break; }
+      c.students.push(...add); save(); render(); toast(`เพิ่มนักเรียน ${add.length} คนแล้ว`); break; }
+    case 'csv': exportCSV(); break;
+    case 'backup': backup(); break;
+    case 'print': window.print(); break;
+    case 'theme': {
+      const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      r.dataset.theme = dark?'light':'dark'; try{localStorage.setItem('scorebook.theme', r.dataset.theme)}catch(e){} break; }
+    case 'delClass': {
+      if(!c) break;
+      askConfirm(`ลบห้อง "${c.name}"?`, 'คะแนน การเช็คชื่อ และคะแนนเสริมของห้องนี้จะถูกลบทั้งหมด แนะนำให้สำรองข้อมูลก่อน', 'ลบห้อง', ()=>{
+        const i=S.classes.indexOf(c); S.classes.splice(i,1); S.cur=S.classes[0]?.id||null; save(); render();
+        toast(`ลบห้อง ${c.name} แล้ว`, ()=>{ S.classes.splice(i,0,c); S.cur=c.id; save(); render(); }); });
+      break; }
+  }
+});
+
+document.addEventListener('change', e=>{
+  if(e.target.id==='classSel'){ S.cur=e.target.value; query=''; save(); render(); }
+  if(e.target.id==='attDate' && e.target.value){ attDate=e.target.value; render(); }
+});
+
+let qTimer;
+document.addEventListener('input', e=>{
+  const t = e.target;
+  if(t.classList.contains('cell')) return onScoreInput(t);
+  if(t.id==='q'){ clearTimeout(qTimer); qTimer=setTimeout(()=>{ query=t.value; render(); const n=document.getElementById('q'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); },150); return; }
+  if(t.id==='reason'){ bonusReason=t.value; return; }
+  if(t.classList.contains('stu-in')){
+    const s = C().students.find(x=>x.id===t.closest('tr').dataset.sid); s[t.dataset.f] = t.value.trim(); save();
+  }
+});
+document.addEventListener('focusin', e=>{ if(e.target.classList.contains('cell')) e.target.select(); });
+
+document.addEventListener('keydown', e=>{
+  const t = e.target;
+  if(t.classList?.contains('cell')){
+    const k = e.key;
+    if(k==='Enter' || k==='ArrowDown'){ e.preventDefault(); if(!moveCell(t, e.shiftKey?-1:1, 0) && k==='Enter') moveCell(t, -(+t.dataset.r), 1); }
+    else if(k==='ArrowUp'){ e.preventDefault(); moveCell(t,-1,0); }
+    else if(k==='ArrowRight' && t.selectionEnd===t.value.length){ if(moveCell(t,0,1)) e.preventDefault(); }
+    else if(k==='ArrowLeft' && t.selectionStart===0 && t.selectionEnd===0 || k==='ArrowLeft' && t.selectionEnd-t.selectionStart===t.value.length){ if(moveCell(t,0,-1)) e.preventDefault(); }
+    else if(k==='Escape'){ t.blur(); }
+  }
+  if(t.classList?.contains('stu-in') && e.key==='Enter'){
+    e.preventDefault();
+    const tr=t.closest('tr'); const nxt=tr.nextElementSibling?.querySelector(`[data-f="${t.dataset.f}"]`);
+    if(nxt) nxt.focus(); else document.querySelector('[data-act="addStu"]').click();
+  }
+  if(t.classList?.contains('stu-in') && e.key!=='Enter'){ /* re-sort on blur only */ }
+});
+document.addEventListener('focusout', e=>{
+  if(e.target.classList?.contains('stu-in') && e.target.dataset.f==='no' && tab==='stu'){
+    setTimeout(()=>{ if(!document.activeElement?.classList.contains('stu-in')) render(); },0);
+  }
+});
+
+/* ================= boot ================= */
+try{ const th=localStorage.getItem('scorebook.theme'); if(th) document.documentElement.dataset.theme=th; }catch(e){}
+if(!S.cur && S.classes[0]) S.cur = S.classes[0].id;
+render();
+if(API) pullFromSheet(); else setStatus('local');
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && API) pullFromSheet(); });
+window.addEventListener('pagehide', ()=>{ if(API && pending().any && navigator.sendBeacon){ const p=pending(); navigator.sendBeacon(API.url, JSON.stringify({action:'save', pin:API.pin, classes:p.changed, deleted:p.deleted, meta:metaObj()})); } });
+window.addEventListener('beforeunload', ()=>{ clearTimeout(saveTimer); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} });
+</script>
+</body>
+</html>
