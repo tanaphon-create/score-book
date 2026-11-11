@@ -8,6 +8,10 @@
  */
 const PIN = 'เปลี่ยนรหัสนี้';
 
+// ถ้าสคริปต์ไม่ได้สร้างจากเมนู ส่วนขยาย > Apps Script ของชีตโดยตรง ให้ใส่รหัสไฟล์ชีตที่นี่ (ส่วนที่อยู่ระหว่าง /d/ กับ /edit ในลิงก์)
+const SPREADSHEET_ID = '';
+function ss_() { return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : ss_(); }
+
 const DATA_SHEET = '_data';      // ชีตเก็บข้อมูลดิบ (ซ่อนไว้) — อย่าแก้ไขด้วยมือ
 const CHUNK = 45000;             // 1 เซลล์เก็บได้ไม่เกิน 50,000 ตัวอักษร
 const ATT = {P: 'มา', A: 'ขาด', L: 'ลา', S: 'สาย'};
@@ -42,7 +46,7 @@ function out_(o) {
 /* ---------------- raw storage ---------------- */
 // คอลัมน์: A id · B อัปเดตล่าสุด · C ชื่อชีตที่สร้าง (JSON) · D… ข้อมูล JSON แบ่งเป็นช่วง
 function dataSheet_() {
-  const ss = SpreadsheetApp.getActive();
+  const ss = ss_();
   let sh = ss.getSheetByName(DATA_SHEET);
   if (!sh) {
     sh = ss.insertSheet(DATA_SHEET);
@@ -94,7 +98,7 @@ function writeRow_(rows, id, json, sheets) {
 }
 
 function save_(p) {
-  const ss = SpreadsheetApp.getActive();
+  const ss = ss_();
   const rows = readRows_();
 
   (p.classes || []).forEach(c => {
