@@ -7,127 +7,167 @@
 <meta name="description" content="บันทึกคะแนน เช็คชื่อ และคะแนนเสริม รายห้องเรียน ใช้งานได้ทันทีแม้ออฟไลน์">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f5f6fa; --surface:#ffffff; --surface-2:#f0f2f7; --line:#e3e6ee;
-  --text:#1b2133; --muted:#69708a; --brand:#4f46e5; --brand-ink:#ffffff; --brand-soft:#eef0ff;
-  --ok:#16a34a; --ok-soft:#e7f7ec; --bad:#dc2626; --bad-soft:#fdecec;
-  --warn:#d97706; --warn-soft:#fdf3e2; --info:#0284c7; --info-soft:#e4f3fb;
-  --shadow:0 1px 2px rgba(20,24,40,.06),0 4px 16px rgba(20,24,40,.06);
-  --r:14px; --r-sm:9px;
+  --bg:#f2f3fb; --surface:#ffffff; --surface-2:#f0f1f9; --glass:rgba(255,255,255,.74); --line:#e1e3f0;
+  --text:#151930; --muted:#656c8c; --brand:#5b4bff; --brand-2:#a855f7; --brand-3:#06b6d4; --brand-ink:#ffffff; --brand-soft:#ecebff;
+  --ok:#12a150; --ok-soft:#e3f7ea; --bad:#e11d48; --bad-soft:#fde8ee;
+  --warn:#d97706; --warn-soft:#fdf2df; --info:#0284c7; --info-soft:#e2f3fc;
+  --grad:linear-gradient(135deg,var(--brand),var(--brand-2) 55%,var(--brand-3));
+  --shadow:0 1px 2px rgba(20,24,60,.05),0 8px 28px -6px rgba(40,40,120,.10);
+  --glow:0 8px 22px -8px color-mix(in srgb,var(--brand) 70%,transparent);
+  --r:18px; --r-sm:11px; --ease:cubic-bezier(.2,.8,.2,1);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0f1220; --surface:#171b2c; --surface-2:#1f2438; --line:#2a3049;
-    --text:#e8eaf3; --muted:#9097b3; --brand:#818cf8; --brand-ink:#0f1220; --brand-soft:#262b4d;
-    --ok:#4ade80; --ok-soft:#173326; --bad:#f87171; --bad-soft:#3a1d22;
-    --warn:#fbbf24; --warn-soft:#3a2e14; --info:#38bdf8; --info-soft:#13304a;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark;
+    --bg:#080a17; --surface:#11142a; --surface-2:#191d3a; --glass:rgba(17,20,42,.68); --line:#262b4c;
+    --text:#e9ebf8; --muted:#9299ba; --brand:#8b7dff; --brand-2:#c084fc; --brand-3:#22d3ee; --brand-ink:#ffffff; --brand-soft:#24264f;
+    --ok:#4ade80; --ok-soft:#12301f; --bad:#fb7185; --bad-soft:#3a1622;
+    --warn:#fbbf24; --warn-soft:#382b10; --info:#38bdf8; --info-soft:#102d44;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 32px -6px rgba(0,0,0,.5);
+    --glow:0 8px 26px -6px color-mix(in srgb,var(--brand) 80%,transparent); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f1220; --surface:#171b2c; --surface-2:#1f2438; --line:#2a3049;
-  --text:#e8eaf3; --muted:#9097b3; --brand:#818cf8; --brand-ink:#0f1220; --brand-soft:#262b4d;
-  --ok:#4ade80; --ok-soft:#173326; --bad:#f87171; --bad-soft:#3a1d22;
-  --warn:#fbbf24; --warn-soft:#3a2e14; --info:#38bdf8; --info-soft:#13304a;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark;
+  --bg:#080a17; --surface:#11142a; --surface-2:#191d3a; --glass:rgba(17,20,42,.68); --line:#262b4c;
+  --text:#e9ebf8; --muted:#9299ba; --brand:#8b7dff; --brand-2:#c084fc; --brand-3:#22d3ee; --brand-ink:#ffffff; --brand-soft:#24264f;
+  --ok:#4ade80; --ok-soft:#12301f; --bad:#fb7185; --bad-soft:#3a1622;
+  --warn:#fbbf24; --warn-soft:#382b10; --info:#38bdf8; --info-soft:#102d44;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 32px -6px rgba(0,0,0,.5);
+  --glow:0 8px 26px -6px color-mix(in srgb,var(--brand) 80%,transparent); color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{font-family:"IBM Plex Sans Thai",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{font-family:"Anuphan",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-25%;z-index:-1;pointer-events:none;background:
+  radial-gradient(38% 32% at 16% 12%,color-mix(in srgb,var(--brand) 24%,transparent),transparent 70%),
+  radial-gradient(34% 30% at 86% 8%,color-mix(in srgb,var(--brand-3) 20%,transparent),transparent 70%),
+  radial-gradient(44% 38% at 68% 92%,color-mix(in srgb,var(--brand-2) 18%,transparent),transparent 70%);
+  animation:aurora 26s ease-in-out infinite alternate}
+@keyframes aurora{to{transform:translate3d(4%,-3%,0) rotate(8deg) scale(1.1)}}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* ---------- top bar ---------- */
-header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:0;z-index:20;background:var(--glass);backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border-bottom:1px solid var(--line)}
 .top-in{max-width:1400px;margin:auto;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto}
-.logo i{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),#a855f7);display:grid;place-items:center;color:#fff;font-style:normal;font-size:18px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;margin-right:auto;letter-spacing:-.01em}
+.logo i{width:36px;height:36px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#fff;font-style:normal;font-size:18px;box-shadow:var(--glow)}
+.logo span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .class-pick{display:flex;gap:8px;align-items:center}
-select.ctl,input.ctl,textarea.ctl{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 11px;min-height:40px}
-select.ctl{padding-right:28px}
+select.ctl,input.ctl,textarea.ctl{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;min-height:40px;transition:border-color .15s,box-shadow .15s}
+select.ctl:focus,input.ctl:focus,textarea.ctl:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 18%,transparent)}
+select.ctl{padding-right:28px;font-weight:600}
 textarea.ctl{width:100%;min-height:140px;resize:vertical}
-.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);padding:8px 14px;min-height:40px;font-weight:500;white-space:nowrap;transition:background .15s,border-color .15s,transform .05s}
-.btn:hover{background:var(--surface-2)}
-.btn:active{transform:translateY(1px)}
-.btn.pri{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
-.btn.pri:hover{filter:brightness(1.08)}
+.btn{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);padding:8px 14px;min-height:40px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,transform .15s var(--ease),box-shadow .2s}
+.btn:hover{background:var(--surface-2);transform:translateY(-1px)}
+.btn:active{transform:translateY(1px) scale(.97)}
+.btn:disabled{opacity:.5;pointer-events:none}
+.btn.pri{background:var(--grad);background-size:160% 160%;border-color:transparent;color:var(--brand-ink);box-shadow:var(--glow)}
+.btn.pri:hover{background-position:100% 50%;box-shadow:0 10px 28px -6px color-mix(in srgb,var(--brand) 80%,transparent)}
 .btn.danger{color:var(--bad)}
 .btn.ghost{border-color:transparent;background:transparent}
-.btn.sm{min-height:32px;padding:4px 10px;font-size:13.5px}
+.btn.sm{min-height:32px;padding:4px 10px;font-size:13.5px;border-radius:9px}
 .icon-btn{width:40px;padding:0;justify-content:center}
 
 /* ---------- tabs ---------- */
-nav.tabs{max-width:1400px;margin:auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs{max-width:1400px;margin:auto;padding:2px 16px 10px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
-nav.tabs button{border:0;background:none;padding:10px 14px;border-bottom:2.5px solid transparent;color:var(--muted);font-weight:600;white-space:nowrap}
-nav.tabs button[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
-main{max-width:1400px;margin:auto;padding:18px 16px 60px}
+nav.tabs button{border:1px solid transparent;background:none;padding:7px 16px;border-radius:99px;color:var(--muted);font-weight:600;white-space:nowrap;transition:color .2s,background .25s,box-shadow .25s,transform .2s var(--ease)}
+nav.tabs button:hover{color:var(--text);background:var(--surface-2)}
+nav.tabs button[aria-selected="true"]{color:#fff;background:var(--grad);box-shadow:var(--glow);transform:translateY(-1px)}
+main{max-width:1400px;margin:auto;padding:18px 16px 70px}
 
 /* ---------- generic ---------- */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card{background:var(--glass);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
 .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .toolbar .grow{flex:1}
 .search{position:relative;min-width:200px;flex:1;max-width:340px}
-.search input{width:100%;padding-left:34px}
-.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search input{width:100%;padding-left:36px;border-radius:99px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
 .muted{color:var(--muted)}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:13px;font-weight:600;background:var(--surface-2)}
 .chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
 .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.info{background:var(--info-soft);color:var(--info)}
 .hint{font-size:13px;color:var(--muted)}
 kbd{font-family:inherit;font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--surface)}
+h2{font-size:17px;margin:0 0 4px;letter-spacing:-.01em} h3{font-size:15px;margin:0 0 8px}
+.pad{padding:16px}
+
+/* ---------- entrance effects ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}}
+@keyframes rowIn{from{opacity:0}}
+.enter>.toolbar,.enter>.stats>.card,.enter>.card,.enter>h3,.enter>.sum-top>.card,.enter>.bonus-layout>*,.enter>.stu-layout>*{animation:rise .5s var(--ease) backwards}
+.enter>.stats>.card:nth-child(2){animation-delay:.05s}.enter>.stats>.card:nth-child(3){animation-delay:.1s}
+.enter>.stats>.card:nth-child(4){animation-delay:.15s}.enter>.stats>.card:nth-child(5){animation-delay:.2s}
+.enter>.card,.enter>.bonus-layout>*,.enter>.stu-layout>*{animation-delay:.08s}
+.enter tbody tr{animation:rowIn .45s ease backwards;animation-delay:calc(80ms + var(--i,0)*16ms)}
 
 /* ---------- tables ---------- */
 .tbl-wrap{overflow:auto;max-height:calc(100vh - 230px);border-radius:var(--r)}
 table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px}
-.grid th,.grid td{border-bottom:1px solid var(--line);padding:0;text-align:center;white-space:nowrap;background:var(--surface)}
-.grid thead th{position:sticky;top:0;z-index:3;background:var(--surface-2);font-weight:600;font-size:13px;padding:8px 6px;color:var(--muted)}
-.grid tfoot td{position:sticky;bottom:0;z-index:2;background:var(--surface-2);font-weight:600;padding:8px 6px;font-size:13px}
-.grid .c-no{position:sticky;left:0;z-index:2;width:52px;min-width:52px;color:var(--muted);padding:0 6px}
+.grid th,.grid td{border-bottom:1px solid var(--line);padding:0;text-align:center;white-space:nowrap;background:var(--surface);transition:background .15s}
+.grid thead th{position:sticky;top:0;z-index:3;background:var(--surface-2);font-weight:600;font-size:13px;padding:9px 6px;color:var(--muted)}
+.grid tfoot td{position:sticky;bottom:0;z-index:2;background:var(--surface-2);font-weight:700;padding:9px 6px;font-size:13px}
+.grid .c-no{position:sticky;left:0;z-index:2;width:52px;min-width:52px;color:var(--muted);padding:0 6px;font-variant-numeric:tabular-nums}
 .grid .c-name{position:sticky;left:52px;z-index:2;text-align:left;padding:0 12px;min-width:190px;max-width:260px;overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--line)}
 .grid thead .c-no,.grid thead .c-name,.grid tfoot .c-no,.grid tfoot .c-name{z-index:4}
-.grid tbody tr:hover td{background:var(--surface-2)}
+.grid tbody tr:hover td{background:color-mix(in srgb,var(--brand-soft) 55%,var(--surface))}
+.grid tbody tr:last-child td{border-bottom:0}
 .grid td.num{padding:8px 10px;font-variant-numeric:tabular-nums}
 .grid .total{font-weight:700}
-.task-h{display:flex;flex-direction:column;align-items:center;gap:1px;border:0;background:none;padding:2px 6px;border-radius:7px;color:var(--text);min-width:76px;max-width:130px}
-.task-h:hover{background:var(--brand-soft)}
+.name-btn{border:0;background:none;padding:6px 0;font-weight:500;text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;border-radius:6px;transition:color .15s}
+.name-btn:hover{color:var(--brand);text-decoration:underline;text-underline-offset:3px}
+.task-h{display:flex;flex-direction:column;align-items:center;gap:1px;border:0;background:none;padding:3px 8px;border-radius:9px;color:var(--text);min-width:76px;max-width:130px;margin:auto;transition:background .15s,transform .15s var(--ease)}
+.task-h:hover{background:var(--brand-soft);transform:translateY(-1px)}
 .task-h b{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;max-width:120px}
 .task-h small{color:var(--muted);font-weight:500;font-size:11.5px}
 .cat-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
-.cell{width:100%;min-width:64px;height:40px;border:0;background:transparent;text-align:center;font-variant-numeric:tabular-nums;font-size:15px;outline:none}
-.cell:focus{background:var(--brand-soft);box-shadow:inset 0 0 0 2px var(--brand);border-radius:4px}
+.cell{width:100%;min-width:64px;height:40px;border:0;background:transparent;text-align:center;font-variant-numeric:tabular-nums;font-size:15px;outline:none;transition:background .12s,box-shadow .12s}
+.cell:focus{background:var(--brand-soft);box-shadow:inset 0 0 0 2px var(--brand);border-radius:6px}
 .cell.err{background:var(--bad-soft);color:var(--bad);font-weight:700}
 .cell::placeholder{color:var(--line)}
-.grade{display:inline-grid;place-items:center;min-width:38px;height:26px;border-radius:7px;font-weight:700;font-size:13.5px;padding:0 6px}
+.grade{display:inline-grid;place-items:center;min-width:38px;height:26px;border-radius:8px;font-weight:700;font-size:13.5px;padding:0 6px}
 .g4{background:var(--ok-soft);color:var(--ok)} .g3{background:var(--info-soft);color:var(--info)}
 .g2{background:var(--warn-soft);color:var(--warn)} .g1,.g0{background:var(--bad-soft);color:var(--bad)}
+@keyframes flash{from{background:color-mix(in srgb,var(--brand) 30%,transparent)}}
+.b-total.bump{animation:flash .6s ease}
+.pbar{position:relative;display:inline-block;min-width:74px;padding:2px 8px;border-radius:7px;overflow:hidden;background:var(--surface-2);font-weight:600}
+.pbar::before{content:"";position:absolute;inset:0;width:var(--p,0%);background:linear-gradient(90deg,color-mix(in srgb,var(--brand) 30%,transparent),color-mix(in srgb,var(--brand-3) 34%,transparent));border-radius:7px}
+.pbar span{position:relative}
+.rank{display:inline-grid;place-items:center;min-width:28px;height:24px;border-radius:7px;font-weight:700;font-size:13px;color:var(--muted)}
+.rank.r1{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#5b3a00}.rank.r2{background:linear-gradient(135deg,#e5e7eb,#9ca3af);color:#1f2937}.rank.r3{background:linear-gradient(135deg,#fdba74,#c2703a);color:#3b1d05}
 
 /* ---------- attendance ---------- */
 .att-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .datebox{display:flex;align-items:center;gap:4px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
-.seg button{border:0;background:none;padding:6px 12px;min-width:52px;min-height:36px;font-weight:600;font-size:13.5px;color:var(--muted);border-right:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:6px 12px;min-width:52px;min-height:36px;font-weight:600;font-size:13.5px;color:var(--muted);border-right:1px solid var(--line);transition:background .15s,color .15s}
+.seg button:hover{background:var(--surface-2);color:var(--text)}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"].P{background:var(--ok);color:#fff}
 .seg button[aria-pressed="true"].A{background:var(--bad);color:#fff}
 .seg button[aria-pressed="true"].L{background:var(--info);color:#fff}
 .seg button[aria-pressed="true"].S{background:var(--warn);color:#fff}
+@keyframes pop{40%{transform:scale(1.18)}}
+.seg button.pop{animation:pop .3s var(--ease)}
 .att-list td{padding:6px 10px}
 .att-list td.c-name{padding:0 12px}
 .dot{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;font-size:12px;font-weight:700}
 .dot.P{background:var(--ok-soft);color:var(--ok)} .dot.A{background:var(--bad);color:#fff}
 .dot.L{background:var(--info-soft);color:var(--info)} .dot.S{background:var(--warn-soft);color:var(--warn)}
-.date-h{border:0;background:none;color:inherit;font:inherit;font-weight:600;padding:2px 4px;border-radius:6px}
+.date-h{border:0;background:none;color:inherit;font:inherit;font-weight:600;padding:2px 6px;border-radius:7px}
 .date-h:hover,.date-h.on{background:var(--brand-soft);color:var(--brand)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.stat{padding:14px 16px}
+.stat{position:relative;padding:14px 16px;overflow:hidden;transition:transform .25s var(--ease),box-shadow .25s}
+.stat:hover{transform:translateY(-3px);box-shadow:var(--shadow),var(--glow)}
+.stat::after{content:"";position:absolute;left:0;top:0;height:3px;width:100%;background:var(--grad);opacity:.7}
 .stat small{color:var(--muted);font-weight:500;display:block}
-.stat b{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat b{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 
 /* ---------- bonus ---------- */
 .bonus-layout{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
@@ -141,69 +181,119 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px
 .log-item .who b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log-item .who small{color:var(--muted)}
 .pts{font-weight:700;font-variant-numeric:tabular-nums;min-width:40px;text-align:right}
+@keyframes fly{0%{opacity:0;transform:translateY(0) scale(.6)}20%{opacity:1;transform:translateY(-14px) scale(1.25)}100%{opacity:0;transform:translateY(-64px) scale(1)}}
+.fly{position:fixed;z-index:200;pointer-events:none;font-weight:800;font-size:20px;animation:fly .9s var(--ease) forwards;text-shadow:0 2px 10px color-mix(in srgb,currentColor 40%,transparent)}
 
-/* ---------- grade bar ---------- */
-.dist{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--surface-2);margin-top:8px}
-.dist span{height:100%}
-.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--muted)}
+/* ---------- summary ---------- */
+.sum-top{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:12px;margin-bottom:16px}
+.ring-card{display:flex;align-items:center;gap:16px;padding:16px 18px}
+.ring{width:104px;height:104px;flex:none;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:9;stroke-linecap:round}
+.ring .trk{stroke:var(--surface-2)}
+@keyframes ring{from{stroke-dashoffset:239}}
+.ring .val{stroke:url(#rg);stroke-dasharray:239;animation:ring 1.1s var(--ease) backwards}
+.ring-wrap{position:relative;flex:none}
+.ring-wrap b{position:absolute;inset:0;display:grid;place-items:center;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:6px}
+.bars>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;min-width:0}
+.bars i{display:block;width:100%;max-width:46px;border-radius:8px 8px 3px 3px;min-height:3px;transform-origin:bottom;animation:grow .8s var(--ease) backwards}
+@keyframes grow{from{transform:scaleY(0)}}
+.bars b{font-size:13px;font-variant-numeric:tabular-nums}
+.bars small{font-size:12px;color:var(--muted);font-weight:600}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
 
 /* ---------- students ---------- */
 .stu-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
-.stu-in{border:1px solid transparent;background:transparent;border-radius:7px;padding:7px 9px;width:100%}
+.stu-in{border:1px solid transparent;background:transparent;border-radius:8px;padding:7px 9px;width:100%}
 .stu-in:hover{border-color:var(--line)}
 .stu-in:focus{border-color:var(--brand);background:var(--surface);outline:none}
-.pad{padding:16px}
-h2{font-size:17px;margin:0 0 4px} h3{font-size:15px;margin:0 0 8px}
+
+/* ---------- student card ---------- */
+.stu-head{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.stu-head>div:nth-child(2){flex:1;min-width:0}
+.stu-head h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0}
+.avatar{width:52px;height:52px;flex:none;border-radius:16px;background:var(--grad);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:700;box-shadow:var(--glow)}
+.mini-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.mini-stats div{background:var(--surface-2);border-radius:12px;padding:8px 10px;text-align:center}
+.mini-stats small{display:block;color:var(--muted);font-size:12px}
+.mini-stats b{font-size:19px;font-variant-numeric:tabular-nums}
+.mini-stats b i{font-style:normal;font-size:12px;color:var(--muted);font-weight:500}
+.task-list{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;max-height:220px;overflow:auto}
+.task-row{display:grid;grid-template-columns:minmax(80px,1.2fr) 2fr auto;gap:10px;align-items:center;font-size:14px}
+.task-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-row b{font-variant-numeric:tabular-nums;font-size:13.5px;min-width:64px;text-align:right}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.bar span{display:block;height:100%;border-radius:99px;background:var(--grad);transform-origin:left;animation:growx .7s var(--ease) backwards}
+@keyframes growx{from{transform:scaleX(0)}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+
+/* ---------- random picker ---------- */
+.rand{position:relative;text-align:center;padding:28px 10px;border-radius:16px;background:var(--surface-2);margin-bottom:14px;overflow:hidden}
+.rand-name{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.3}
+.rand-sub{color:var(--muted);margin-top:4px}
+.rand.win{background:var(--grad);color:#fff;box-shadow:var(--glow)}
+.rand.win .rand-sub{color:rgba(255,255,255,.85)}
+.rand.win .rand-name{animation:pop .5s var(--ease)}
+.conf{position:absolute;left:50%;top:50%;width:8px;height:12px;border-radius:2px;pointer-events:none;animation:conf 1.2s var(--ease) forwards}
+@keyframes conf{to{transform:translate(var(--x),var(--y)) rotate(var(--rot));opacity:0}}
 
 /* ---------- empty ---------- */
 .empty{text-align:center;padding:56px 20px}
-.empty .big{font-size:46px;line-height:1}
-.empty h2{font-size:21px;margin:14px 0 6px}
+.empty .big{font-size:50px;line-height:1;display:inline-block;animation:float 3.5s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px) rotate(-4deg)}}
+.empty h2{font-size:22px;margin:14px 0 6px}
 .empty p{color:var(--muted);margin:0 auto 18px;max-width:420px}
 .empty .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
 /* ---------- dialog / menu / toast ---------- */
-dialog{border:0;border-radius:18px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(440px,calc(100vw - 32px))}
-dialog::backdrop{background:rgba(10,12,25,.45);backdrop-filter:blur(2px)}
+dialog{border:1px solid var(--line);border-radius:22px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 30px 80px -10px rgba(0,0,20,.45);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
+dialog.wide{width:min(560px,calc(100vw - 32px))}
+dialog[open]{animation:dlg .32s var(--ease)}
+@keyframes dlg{from{opacity:0;transform:translateY(18px) scale(.96)}}
+dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation:fade .25s ease}
+@keyframes fade{from{opacity:0}}
 .dlg{padding:20px}
 .dlg h2{margin-bottom:14px}
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .field label{font-size:13.5px;font-weight:600}
 .field .ctl{width:100%}
-.dlg-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap}
 .dlg-foot .left{margin-right:auto}
 .menu{position:relative}
-.menu-pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:230px;display:none;z-index:30}
-.menu-pop.open{display:block}
-.menu-pop button,.menu-pop label{display:flex;width:100%;gap:8px;align-items:center;border:0;background:none;padding:9px 12px;border-radius:8px;text-align:left;cursor:pointer;font-size:14px}
+.menu-pop{position:absolute;right:0;top:calc(100% + 8px);background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:6px;min-width:250px;z-index:30;opacity:0;visibility:hidden;transform:translateY(-6px) scale(.97);transform-origin:top right;transition:opacity .18s,transform .22s var(--ease),visibility .18s}
+.menu-pop.open{opacity:1;visibility:visible;transform:none}
+.menu-pop button,.menu-pop label{display:flex;width:100%;gap:8px;align-items:center;border:0;background:none;padding:9px 12px;border-radius:10px;text-align:left;cursor:pointer;font-size:14px}
 .menu-pop button:hover,.menu-pop label:hover{background:var(--surface-2)}
 .menu-pop hr{border:0;border-top:1px solid var(--line);margin:5px 0}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:500;opacity:0;pointer-events:none;transition:.2s;z-index:100;display:flex;gap:12px;align-items:center}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(24px) scale(.96);background:var(--text);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .3s var(--ease);z-index:100;display:flex;gap:12px;align-items:center;box-shadow:0 12px 34px -8px rgba(0,0,20,.5);max-width:calc(100vw - 32px)}
 #toast.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
-#toast button{border:0;background:none;color:var(--brand);font-weight:700;padding:0}
-.saved{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:5px;border:0;background:none;padding:6px 8px;border-radius:8px}
+#toast button{border:0;background:none;color:var(--brand-3);font-weight:700;padding:0}
+.saved{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:6px 11px;border-radius:99px;transition:background .15s,color .15s}
 .saved:hover{background:var(--surface-2);color:var(--text)}
-.saved i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.saved i{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,currentColor 12%,transparent)}
+.saved[data-kind="syncing"] i,.saved[data-kind="loading"] i{animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
 
 @media (max-width:900px){
-  .bonus-layout,.stu-layout{grid-template-columns:1fr}
+  .bonus-layout,.stu-layout,.sum-top{grid-template-columns:1fr}
   .tbl-wrap{max-height:none}
   .log{max-height:360px}
 }
 @media (max-width:560px){
   .logo span{display:none}
-  .grid .c-name{min-width:130px;max-width:150px;padding:0 8px}
+  .grid .c-name{min-width:130px;max-width:150px;padding:0 8px;left:40px}
   .grid .c-no{width:40px;min-width:40px}
-  .grid .c-name{left:40px}
   .seg button{min-width:42px;padding:6px 8px}
-  .saved{display:none}
+  .saved{max-width:44px;overflow:hidden;white-space:nowrap;padding:6px 16px}
+  .mini-stats{grid-template-columns:repeat(2,1fr)}
+  .rand-name{font-size:23px}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media print{
-  header.top,.toolbar,.no-print{display:none!important}
+  body::before,header.top,.toolbar,.no-print{display:none!important}
   .tbl-wrap{max-height:none;overflow:visible}
-  .card{box-shadow:none}
+  .card{box-shadow:none;backdrop-filter:none;background:#fff}
 }
 </style>
 </head>
@@ -219,7 +309,10 @@ dialog::backdrop{background:rgba(10,12,25,.45);backdrop-filter:blur(2px)}
         <button data-act="newClass" role="menuitem">＋ เพิ่มห้องเรียน</button>
         <button data-act="editClass" role="menuitem">✎ แก้ไขชื่อห้อง/วิชา</button>
         <hr>
-        <button data-act="csv" role="menuitem">⬇ ส่งออกสรุปคะแนน (Excel/CSV)</button>
+        <button data-act="random" role="menuitem">🎲 สุ่มชื่อนักเรียน</button>
+        <hr>
+        <button data-act="xlsx" role="menuitem">⬇ ส่งออก Excel / Google Sheet (.xlsx)</button>
+        <button data-act="csv" role="menuitem">⬇ ส่งออกแบบ CSV</button>
         <button data-act="backup" role="menuitem">💾 สำรองข้อมูลทั้งหมด (.json)</button>
         <label role="menuitem">📂 กู้คืนจากไฟล์สำรอง<input type="file" accept=".json,application/json" id="restoreFile" hidden></label>
         <button data-act="print" role="menuitem">🖨 พิมพ์หน้านี้</button>
@@ -468,7 +561,7 @@ function viewScores(v, c){
   v.innerHTML = `
   <div class="toolbar">
     ${searchBox()}
-    <span class="hint grow">กรอกแล้วกด <kbd>Enter</kbd> ลงคนถัดไป · ลูกศรเลื่อนช่อง</span>
+    <span class="hint grow"><kbd>Enter</kbd> ลงคนถัดไป · ลูกศรเลื่อนช่อง · วางคะแนนทั้งคอลัมน์จาก Excel ได้</span>
     <button class="btn pri" data-act="addTask">＋ เพิ่มงาน</button>
   </div>
   ${!c.tasks.length ? `<div class="card empty"><div class="big" aria-hidden="true">📝</div><h2>ยังไม่มีงาน</h2><p>เพิ่มงาน การบ้าน หรือการสอบ พร้อมคะแนนเต็ม แล้วกรอกคะแนนได้ทันที</p><div class="row"><button class="btn pri" data-act="addTask">＋ เพิ่มงานแรก</button></div></div>` : `
@@ -481,7 +574,7 @@ function viewScores(v, c){
     </tr></thead>
     <tbody>
     ${list.map((s,r)=>{ const st=statOf(c,s); return `<tr data-sid="${s.id}">
-      <td class="c-no">${esc(s.no)}</td><td class="c-name" title="${esc(s.name)}">${esc(s.name)}</td>
+      <td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
       ${c.tasks.map((t,ci)=>{ const val=c.scores[t.id]?.[s.id]; const bad = val!=null && val!=='' && +val>+t.max;
         return `<td><input class="cell${bad?' err':''}" inputmode="decimal" autocomplete="off" aria-label="${esc(s.name)} ${esc(t.name)}" data-r="${r}" data-c="${ci}" data-t="${t.id}" value="${val??''}" placeholder="·"></td>`}).join('')}
       <td class="num b-bonus">${st.bonus? '<span class="plus">+'+fmt(st.bonus)+'</span>':'<span class="muted">–</span>'}</td>
@@ -515,7 +608,7 @@ function onScoreInput(inp){
     (c.scores[tid] ||= {})[sid] = n;
   }
   const tr = inp.closest('tr'); const s = c.students.find(x=>x.id===sid); const st = statOf(c,s);
-  tr.querySelector('.b-total').textContent = fmt(st.total);
+  const bt = tr.querySelector('.b-total'); bt.textContent = fmt(st.total); bt.classList.remove('bump'); void bt.offsetWidth; bt.classList.add('bump');
   tr.querySelector('.b-pct').textContent = fmt(st.pct);
   tr.querySelector('.b-grade').innerHTML = gradeBadge(st.grade);
   const avg = document.querySelector(`[data-avg="${tid}"]`); if(avg) avg.textContent = fmt(taskAvg(c,t));
@@ -538,6 +631,7 @@ function taskDialog(task){
     <div class="field"><label for="f_name">ชื่องาน</label><input class="ctl" id="f_name" required maxlength="60" value="${esc(task.name)}"></div>
     <div class="field"><label for="f_max">คะแนนเต็ม</label><input class="ctl" id="f_max" type="number" min="0.5" step="0.5" required value="${task.max}"></div>
     <div class="field"><label for="f_cat">ประเภท</label><select class="ctl" id="f_cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${k===task.cat?'selected':''}>${v.name}</option>`).join('')}</select></div>
+    ${isNew?'':'<p style="margin:0 0 12px"><button type="button" class="btn sm" id="fillMax">✨ ใส่คะแนนเต็มให้คนที่ยังว่าง</button></p>'}
     <div class="dlg-foot">${isNew?'':'<button type="button" class="btn danger left" id="delTask">ลบงานนี้</button>'}
       <button type="button" class="btn" value="cancel" data-close>ยกเลิก</button><button class="btn pri" value="ok">บันทึก</button></div>`,
     f=>{
@@ -549,6 +643,12 @@ function taskDialog(task){
       if(isNew) setTimeout(()=>{ const ci=c.tasks.length-1; const el=document.querySelector(`#scoreGrid .cell[data-r="0"][data-c="${ci}"]`); el?.focus(); el?.scrollIntoView({block:'nearest',inline:'center'}); },30);
     });
   document.getElementById('f_name').select();
+  document.getElementById('fillMax')?.addEventListener('click', ()=>{
+    const sc = (c.scores[task.id] ||= {}); const filled = [];
+    c.students.forEach(s=>{ if(sc[s.id]==null || sc[s.id]===''){ sc[s.id] = +task.max; filled.push(s.id); } });
+    closeDialog(); save(); render();
+    toast(`ใส่คะแนนเต็มให้ ${filled.length} คน`, ()=>{ filled.forEach(id=>delete sc[id]); save(); render(); });
+  });
   document.getElementById('delTask')?.addEventListener('click', ()=>{
     const idx = c.tasks.findIndex(t=>t.id===task.id); const removed = c.tasks[idx]; const sc = c.scores[task.id];
     c.tasks.splice(idx,1); delete c.scores[task.id]; closeDialog(); save(); render();
@@ -588,14 +688,14 @@ function viewAtt(v, c){
   <div class="card tbl-wrap" style="margin-bottom:18px">
   <table class="grid att-list"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th><th>สถานะวันนี้</th><th>มาเรียน (สะสม)</th></tr></thead><tbody>
   ${list.map(s=>{ const cur=day[s.id]; const a=attOf(c,s.id); return `<tr data-sid="${s.id}">
-    <td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
+    <td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
     <td><div class="seg" role="group" aria-label="สถานะของ ${esc(s.name)}">${Object.entries(ATT).map(([k,n])=>`<button class="${k}" data-att="${k}" aria-pressed="${cur===k}">${n}</button>`).join('')}</div></td>
     <td>${a.pct==null?'<span class="muted">–</span>':`<span class="chip ${a.pct<80?'bad':'ok'}">${fmt(a.pct)}%</span> <span class="hint">ขาด ${a.A} · ลา ${a.L} · สาย ${a.S}</span>`}</td></tr>`}).join('')}
   </tbody></table></div>
   ${dates.length?`<h3>ประวัติการเช็คชื่อ (${dates.length} วัน)</h3>
   <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
   ${dates.map(d=>`<th><button class="date-h ${d===attDate?'on':''}" data-date="${d}">${fmtDate(d)}</button></th>`).join('')}<th>มา%</th></tr></thead><tbody>
-  ${list.map(s=>{const a=attOf(c,s.id); return `<tr><td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
+  ${list.map(s=>{const a=attOf(c,s.id); return `<tr><td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
   ${dates.map(d=>{const x=c.attendance[d][s.id]; return `<td class="num">${x?`<span class="dot ${x}" title="${ATT[x]}">${ATT[x][0]}</span>`:'<span class="muted">·</span>'}</td>`}).join('')}
   <td class="num">${a.pct==null?'–':`<span class="chip ${a.pct<80?'bad':'ok'}">${fmt(a.pct)}</span>`}</td></tr>`}).join('')}
   </tbody></table></div>`:''}`;
@@ -615,11 +715,13 @@ function viewBonus(v, c){
       <input class="ctl" id="reason" list="reasons" value="${esc(bonusReason)}" placeholder="เหตุผล เช่น ตอบคำถาม">
       <datalist id="reasons"><option>ตอบคำถาม</option><option>ช่วยงานครู</option><option>จิตอาสา</option><option>ส่งงานเร็ว</option><option>ทำงานดีเด่น</option><option>ไม่ตั้งใจเรียน</option></datalist>
     </div>
-    <span class="hint">กดปุ่มเพื่อให้คะแนนพร้อมเหตุผลนี้</span>
+    <div class="grow"></div>
+    <button class="btn" data-allpts="1" title="ให้ +1 กับทุกคนที่แสดงอยู่">+1 ทั้งห้อง</button>
+    <button class="btn pri" data-act="random">🎲 สุ่มชื่อ</button>
   </div>
   <div class="bonus-layout">
     <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th><th>รวมคะแนนเสริม</th><th style="text-align:right;padding-right:14px">ให้คะแนน</th></tr></thead><tbody>
-    ${list.map(s=>{const b=bonusOf(c,s.id); return `<tr data-sid="${s.id}"><td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
+    ${list.map(s=>{const b=bonusOf(c,s.id); return `<tr data-sid="${s.id}"><td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
     <td class="num"><b class="${b>0?'plus':b<0?'minus':'muted'}">${b>0?'+':''}${fmt(b)}</b></td>
     <td><div class="quick"><button class="btn sm" data-pts="-1" aria-label="หัก 1 คะแนน ${esc(s.name)}">−1</button><button class="btn sm" data-pts="1" aria-label="เพิ่ม 1 คะแนน ${esc(s.name)}">+1</button><button class="btn sm" data-pts="2" aria-label="เพิ่ม 2 คะแนน ${esc(s.name)}">+2</button><button class="btn sm" data-pts="5" aria-label="เพิ่ม 5 คะแนน ${esc(s.name)}">+5</button><button class="btn sm" data-pts="custom" aria-label="กำหนดคะแนนเอง ${esc(s.name)}">…</button></div></td></tr>`}).join('')}
     </tbody></table></div>
@@ -639,43 +741,305 @@ function addBonus(sid, pts, reason){
 }
 
 /* ================= summary ================= */
+let sumSort = 'no';
 function viewSum(v, c){
   if(!c.students.length){ v.innerHTML = noStudents(); return; }
-  const list = visibleStudents(c);
   const all = sortedStudents(c).map(s=>({s, st:statOf(c,s)}));
+  const rankOf = rankMap(all);
+  const vis = new Set(visibleStudents(c).map(s=>s.id));
+  const rows = all.filter(x=>vis.has(x.s.id));
+  if(sumSort==='high') rows.sort((a,b)=>b.st.total-a.st.total);
+  else if(sumSort==='low') rows.sort((a,b)=>a.st.total-b.st.total);
+  else if(sumSort==='att') rows.sort((a,b)=>(a.st.att.pct??101)-(b.st.att.pct??101));
   const dist = {}; Object.keys(GRADE_COLORS).forEach(g=>dist[g]=0);
   all.forEach(x=>{ if(x.st.grade) dist[x.st.grade]++; });
+  const top = Math.max(1, ...Object.values(dist));
   const ms = all.filter(x=>x.st.ms).length;
-  const avg = classAvg(c,'pct');
-  const passed = all.filter(x=>x.st.grade && +x.st.grade>=1).length;
+  const avg = classAvg(c,'pct') || 0;
+  const passed = all.filter(x=>x.st.grade && +x.st.grade>=1 && !x.st.ms).length;
+  const missing = all.filter(x=>c.tasks.some(t=>{ const val=c.scores[t.id]?.[x.s.id]; return val==null||val===''; })).length;
   const catTotals = {};
   c.tasks.forEach(t=>{ catTotals[t.cat]=(catTotals[t.cat]||0)+(+t.max); });
   v.innerHTML = `
+  <div class="sum-top">
+    <div class="card ring-card">
+      <div class="ring-wrap"><svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brand)"/><stop offset=".55" stop-color="var(--brand-2)"/><stop offset="1" stop-color="var(--brand-3)"/></linearGradient></defs>
+        <circle class="trk" cx="50" cy="50" r="38"/><circle class="val" cx="50" cy="50" r="38" style="stroke-dashoffset:${239*(1-avg/100)}"/></svg><b>${fmt(avg)}%</b></div>
+      <div><h2>เฉลี่ยทั้งห้อง</h2><span class="hint">${esc(c.name)}${c.subject?' · '+esc(c.subject):''}<br>${c.tasks.length} งาน · คะแนนเต็ม ${fmt(maxTotal(c))}</span></div>
+    </div>
+    <div class="card pad">
+      <h3 style="margin:0">การกระจายเกรด</h3>
+      <div class="bars" role="img" aria-label="การกระจายเกรด ${Object.entries(dist).map(([g,n])=>`เกรด ${g} ${n} คน`).join(', ')}">
+        ${Object.keys(dist).sort((a,b)=>b-a).map((g,i)=>`<div><b>${dist[g]}</b><i style="height:${dist[g]/top*100}%;background:${GRADE_COLORS[g]};animation-delay:${i*50}ms"></i><small>${g}</small></div>`).join('')}
+      </div>
+      ${Object.keys(catTotals).length?`<div class="legend">สัดส่วนคะแนน: ${Object.entries(catTotals).map(([k,n])=>`<span><i style="background:${CATS[k]?.color}"></i>${CATS[k]?.name} ${fmt(n)}</span>`).join('')}</div>`:''}
+    </div>
+  </div>
   <div class="stats">
-    <div class="card stat"><small>นักเรียน</small><b>${c.students.length}</b></div>
-    <div class="card stat"><small>งานทั้งหมด</small><b>${c.tasks.length} <span class="muted" style="font-size:14px">เต็ม ${fmt(maxTotal(c))}</span></b></div>
-    <div class="card stat"><small>เฉลี่ยทั้งห้อง</small><b>${fmt(avg)}%</b></div>
-    <div class="card stat"><small>ผ่าน (เกรด 1 ขึ้นไป)</small><b style="color:var(--ok)">${passed}</b></div>
-    <div class="card stat"><small>เวลาเรียนไม่ถึง 80% (มส)</small><b style="color:${ms?'var(--bad)':'inherit'}">${ms}</b></div>
+    <div class="card stat"><small>นักเรียน</small><b data-count="${c.students.length}">${c.students.length}</b></div>
+    <div class="card stat"><small>ผ่าน (เกรด 1 ขึ้นไป)</small><b data-count="${passed}" style="color:var(--ok)">${passed}</b></div>
+    <div class="card stat"><small>ยังค้างส่งงาน</small><b data-count="${missing}" style="color:${missing?'var(--warn)':'inherit'}">${missing}</b></div>
+    <div class="card stat"><small>เวลาเรียนไม่ถึง 80% (มส)</small><b data-count="${ms}" style="color:${ms?'var(--bad)':'inherit'}">${ms}</b></div>
   </div>
-  <div class="card pad" style="margin-bottom:16px">
-    <h3 style="margin:0">การกระจายเกรด</h3>
-    <div class="dist" role="img" aria-label="การกระจายเกรด">${Object.entries(dist).reverse().filter(([,n])=>n).map(([g,n])=>`<span style="width:${n/c.students.length*100}%;background:${GRADE_COLORS[g]}" title="เกรด ${g}: ${n} คน"></span>`).join('')}</div>
-    <div class="legend">${Object.entries(dist).map(([g,n])=>`<span><i style="background:${GRADE_COLORS[g]}"></i>${g} : <b style="color:var(--text)">${n}</b></span>`).join('')}</div>
-    ${Object.keys(catTotals).length?`<div class="legend" style="margin-top:12px">สัดส่วนคะแนน: ${Object.entries(catTotals).map(([k,n])=>`<span><i style="background:${CATS[k]?.color}"></i>${CATS[k]?.name} ${fmt(n)}</span>`).join('')}</div>`:''}
-  </div>
-  <div class="toolbar">${searchBox()}<div class="grow"></div><button class="btn" data-act="print">🖨 พิมพ์</button><button class="btn pri" data-act="csv">⬇ ส่งออก Excel</button></div>
+  <div class="toolbar">${searchBox()}
+    <label class="sr" for="sumSort">เรียงลำดับ</label>
+    <select class="ctl" id="sumSort">
+      <option value="no" ${sumSort==='no'?'selected':''}>เรียงตามเลขที่</option>
+      <option value="high" ${sumSort==='high'?'selected':''}>คะแนนมาก → น้อย</option>
+      <option value="low" ${sumSort==='low'?'selected':''}>คะแนนน้อย → มาก</option>
+      <option value="att" ${sumSort==='att'?'selected':''}>มาเรียนน้อยสุดก่อน</option>
+    </select>
+    <div class="grow"></div><button class="btn" data-act="print">🖨 พิมพ์</button><button class="btn pri" data-act="xlsx">⬇ ส่งออก Excel / Sheet</button></div>
   <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
-    <th>คะแนนงาน</th><th>เสริม</th><th>รวม / ${fmt(maxTotal(c))}</th><th>%</th><th>เกรด</th><th>มาเรียน</th><th>ส่งงาน</th><th>หมายเหตุ</th></tr></thead><tbody>
-  ${list.map(s=>{const st=statOf(c,s); const sent=c.tasks.filter(t=>{const v=c.scores[t.id]?.[s.id]; return v!=null&&v!==''}).length; const miss=c.tasks.length-sent;
-  return `<tr><td class="c-no">${esc(s.no)}</td><td class="c-name">${esc(s.name)}</td>
-    <td class="num">${fmt(st.raw)}</td><td class="num">${st.bonus?'<span class="plus">+'+fmt(st.bonus)+'</span>':'–'}</td>
-    <td class="num total">${fmt(st.total)}</td><td class="num">${fmt(st.pct)}</td><td class="num">${st.ms?'<span class="grade g0">มส</span>':gradeBadge(st.grade)}</td>
+    <th>อันดับ</th><th>คะแนนงาน</th><th>เสริม</th><th>รวม / ${fmt(maxTotal(c))}</th><th>ร้อยละ</th><th>เกรด</th><th>มาเรียน</th><th>ส่งงาน</th><th>หมายเหตุ</th></tr></thead><tbody>
+  ${rows.map(({s,st})=>{ const sent=c.tasks.filter(t=>{const val=c.scores[t.id]?.[s.id]; return val!=null&&val!==''}).length; const miss=c.tasks.length-sent; const rk=rankOf.get(s.id);
+  return `<tr><td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
+    <td class="num"><span class="rank ${rk<=3&&st.max?'r'+rk:''}">${st.max?rk:'–'}</span></td>
+    <td class="num">${fmt(st.raw)}</td><td class="num">${st.bonus?`<span class="${st.bonus>0?'plus':'minus'}">${st.bonus>0?'+':''}${fmt(st.bonus)}</span>`:'–'}</td>
+    <td class="num total">${fmt(st.total)}</td><td class="num"><span class="pbar" style="--p:${st.pct}%"><span>${fmt(st.pct)}</span></span></td>
+    <td class="num">${st.ms?'<span class="grade g0">มส</span>':gradeBadge(st.grade)}</td>
     <td class="num">${st.att.pct==null?'–':`<span class="chip ${st.ms?'bad':'ok'}">${fmt(st.att.pct)}%</span>`}</td>
     <td class="num">${c.tasks.length?`${sent}/${c.tasks.length}`:'–'}</td>
     <td class="num">${miss>0&&c.tasks.length?`<span class="chip warn">ค้าง ${miss} งาน</span>`:''}${st.ms?' <span class="chip bad">มส</span>':''}</td></tr>`}).join('')}
   </tbody></table></div>
-  <p class="hint">เกณฑ์: 80+ = 4 · 75 = 3.5 · 70 = 3 · 65 = 2.5 · 60 = 2 · 55 = 1.5 · 50 = 1 · ต่ำกว่า 50 = 0 · คะแนนเสริมนำไปรวมกับคะแนนงาน (ไม่เกิน 100%) · มาเรียนนับ "มา" และ "สาย"; ต่ำกว่า 80% = มส</p>`;
+  <p class="hint">เกณฑ์: 80+ = 4 · 75 = 3.5 · 70 = 3 · 65 = 2.5 · 60 = 2 · 55 = 1.5 · 50 = 1 · ต่ำกว่า 50 = 0 · คะแนนเสริมนำไปรวมกับคะแนนงาน (ไม่เกิน 100%) · มาเรียนนับ "มา" และ "สาย"; ต่ำกว่า 80% = มส · กดที่ชื่อเพื่อดูรายละเอียดรายคน</p>`;
+}
+function rankMap(all){
+  const ranked = [...all].sort((a,b)=>b.st.total-a.st.total); const m = new Map();
+  ranked.forEach((x,i)=> m.set(x.s.id, i && ranked[i-1].st.total===x.st.total ? m.get(ranked[i-1].s.id) : i+1));
+  return m;
+}
+
+/* ================= effects ================= */
+const nameBtn = s => `<button class="name-btn" data-stu="${s.id}" title="ดูรายละเอียด ${esc(s.name)}">${esc(s.name)}</button>`;
+const calm = () => { try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return true; } };
+function animateView(){
+  const v = document.getElementById('view'); if(calm()) return;
+  v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter');
+  v.querySelectorAll('tbody').forEach(tb=>[...tb.rows].slice(0,40).forEach((tr,i)=>tr.style.setProperty('--i',i)));
+  v.querySelectorAll('b[data-count]').forEach(countUp);
+}
+function countUp(el){
+  const end = +el.dataset.count; const node = el.firstChild;
+  if(!isFinite(end) || !node || !window.requestAnimationFrame || !window.performance) return;
+  const t0 = performance.now();
+  const step = t => { const p = Math.min(1,(t-t0)/650), e = 1-Math.pow(1-p,3);
+    node.textContent = p<1 ? Math.round(end*e) : fmt(end); if(p<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function floatPts(el, pts){
+  if(calm() || !el?.getBoundingClientRect) return;
+  const r = el.getBoundingClientRect(); const f = document.createElement('span');
+  f.className = 'fly ' + (pts>=0?'plus':'minus'); f.textContent = (pts>0?'+':'')+pts;
+  f.style.left = (r.left + r.width/2 - 12) + 'px'; f.style.top = (r.top - 6) + 'px';
+  document.body.appendChild(f); setTimeout(()=>f.remove(), 950);
+}
+function confetti(box){
+  if(calm()) return;
+  const colors = ['#fde047','#f472b6','#22d3ee','#a78bfa','#4ade80','#fb923c','#ffffff'];
+  for(let i=0;i<28;i++){ const p = document.createElement('span'); p.className='conf';
+    const a = Math.random()*Math.PI*2, d = 70+Math.random()*130;
+    p.style.cssText = `background:${colors[i%colors.length]};--x:${Math.cos(a)*d}px;--y:${Math.sin(a)*d}px;--rot:${Math.random()*720-360}deg`;
+    box.appendChild(p); setTimeout(()=>p.remove(), 1300); }
+}
+
+/* ================= student card ================= */
+const initialOf = n => (String(n).replace(/^(ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง|นางสาว|น\.ส\.|นาย|นาง)\s*/,'').match(/[ก-ฮA-Za-z]/)||['?'])[0];
+function studentDialog(sid){
+  const c = C(); const s = c?.students.find(x=>x.id===sid); if(!s) return;
+  const st = statOf(c,s);
+  const rk = rankMap(c.students.map(x=>({s:x, st:statOf(c,x)}))).get(sid);
+  const bl = c.bonus.filter(b=>b.sid===sid).sort((a,b)=>b.ts-a.ts);
+  const a = st.att;
+  openDialog(`<div class="stu-head"><div class="avatar" aria-hidden="true">${esc(initialOf(s.name))}</div>
+      <div><h2>${esc(s.name)}</h2><span class="hint">เลขที่ ${esc(s.no)}${s.code?' · รหัส '+esc(s.code):''}${st.max?` · อันดับ ${rk} จาก ${c.students.length}`:''}</span></div>
+      <button type="button" class="btn ghost icon-btn" data-close aria-label="ปิด">✕</button></div>
+    <div class="mini-stats">
+      <div><small>รวม</small><b>${fmt(st.total)}<i> /${fmt(st.max)}</i></b></div>
+      <div><small>ร้อยละ</small><b>${fmt(st.pct)}</b></div>
+      <div><small>เกรด</small><b>${st.ms?'มส':(st.grade??'–')}</b></div>
+      <div><small>มาเรียน</small><b>${a.pct==null?'–':fmt(a.pct)+'<i>%</i>'}</b></div>
+    </div>
+    <h3>คะแนนรายงาน</h3>
+    <div class="task-list">${c.tasks.length ? c.tasks.map((t,i)=>{ const val=c.scores[t.id]?.[s.id]; const has=val!=null&&val!=='';
+      return `<div class="task-row"><span><span class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></span>${esc(t.name)}</span>
+        <div class="bar"><span style="width:${has?Math.min(100,val/t.max*100):0}%;animation-delay:${i*40}ms"></span></div>
+        <b class="${has?'':'minus'}">${has?fmt(+val)+' / '+fmt(+t.max):'ยังไม่ส่ง'}</b></div>`}).join('') : '<span class="hint">ยังไม่มีงาน</span>'}</div>
+    <h3>การมาเรียน ${a.days?`<span class="hint">(${a.days} วัน)</span>`:''}</h3>
+    <div class="chips"><span class="chip ok">มา ${a.P}</span><span class="chip bad">ขาด ${a.A}</span><span class="chip info">ลา ${a.L}</span><span class="chip warn">สาย ${a.S}</span></div>
+    <h3>คะแนนเสริม <span class="${st.bonus>0?'plus':st.bonus<0?'minus':'muted'}">${st.bonus>0?'+':''}${fmt(st.bonus)}</span></h3>
+    <div class="task-list" style="margin-bottom:6px">${bl.length ? bl.map(b=>`<div class="task-row" style="grid-template-columns:1fr auto auto"><span>${esc(b.reason||'—')}</span><span class="hint">${fmtDate(b.date)}</span><b class="${b.pts>=0?'plus':'minus'}">${b.pts>0?'+':''}${fmt(b.pts)}</b></div>`).join('') : '<span class="hint">ยังไม่มีรายการ</span>'}</div>
+    <div class="dlg-foot"><button type="button" class="btn" id="stuBonus">⭐ +1 คะแนนเสริม</button><button type="button" class="btn pri" data-close>ปิด</button></div>`,
+    ()=>false, true);
+  document.getElementById('stuBonus').addEventListener('click', e=>{ floatPts(e.currentTarget,1); closeDialog(); addBonus(sid,1); });
+}
+
+/* ================= random picker ================= */
+function randomDialog(){
+  const c = C(); if(!c) return;
+  const day = c.attendance[today()] || {};
+  const pool = sortedStudents(c).filter(s => s.name && !['A','L'].includes(day[s.id]));
+  if(!pool.length){ toast('ยังไม่มีนักเรียนให้สุ่ม'); return; }
+  openDialog(`<h2>🎲 สุ่มชื่อนักเรียน</h2>
+    <div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub">${pool.length} คน (ไม่รวมคนที่ขาด/ลาวันนี้)</div></div>
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 คะแนน</button><button type="button" class="btn pri" id="randGo">สุ่มเลย</button></div>`,
+    ()=>false);
+  const box=document.getElementById('randBox'), nameEl=document.getElementById('randName'), sub=document.getElementById('randSub');
+  const go=document.getElementById('randGo'), give=document.getElementById('randGive');
+  let picked=null, last=null;
+  go.addEventListener('click', ()=>{
+    go.disabled = give.disabled = true; box.classList.remove('win');
+    let n=0; const total = calm() ? 1 : 16+Math.floor(Math.random()*8);
+    const tick = ()=>{
+      do { picked = pool[Math.floor(Math.random()*pool.length)]; } while(pool.length>1 && picked===last);
+      last = picked; nameEl.textContent = picked.name; sub.textContent = 'เลขที่ ' + picked.no; n++;
+      if(n<total) setTimeout(tick, 45 + n*n*0.9);
+      else { box.classList.add('win'); confetti(box); go.disabled = give.disabled = false; go.textContent='สุ่มอีกครั้ง'; }
+    };
+    tick();
+  });
+  give.addEventListener('click', ()=>{ if(picked){ closeDialog(); addBonus(picked.id, 1, 'สุ่มตอบคำถาม'); } });
+}
+function bonusAll(pts){
+  const c = C(); const list = visibleStudents(c); if(!list.length) return;
+  const ids = new Set(); const ts = Date.now();
+  list.forEach((s,i)=>{ const b={id:uid(), sid:s.id, pts, reason:bonusReason, date:today(), ts:ts+i}; ids.add(b.id); c.bonus.push(b); });
+  save(); render();
+  toast(`${pts>0?'+':''}${pts} คะแนน ให้ ${list.length} คน`, ()=>{ c.bonus = c.bonus.filter(b=>!ids.has(b.id)); save(); render(); });
+}
+
+/* ================= Excel / Sheet export (.xlsx) ================= */
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+async function exportXLSX(){
+  const c = C(); if(!c) return;
+  toast('กำลังสร้างไฟล์ Excel…');
+  try{ if(!window.ExcelJS) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js'); }
+  catch(e){ toast('⚠ โหลดตัวสร้าง Excel ไม่ได้ (ออฟไลน์) — ส่งออกเป็น CSV แทน'); return exportCSV(); }
+  try{
+    const buf = await buildWorkbook(c).xlsx.writeBuffer();
+    const ok = await download(`สมุดคะแนน_${c.name.replace(/[\\/:*?"<>|]/g,'-')}_${today()}.xlsx`, buf, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    if(ok) toast('ส่งออกแล้ว — เปิดด้วย Excel หรืออัปโหลดเข้า Google Sheets ได้เลย');
+  }catch(e){ console.error(e); toast('⚠ สร้างไฟล์ไม่สำเร็จ'); }
+}
+function buildWorkbook(c){
+  const wb = new ExcelJS.Workbook(); wb.creator = 'สมุดคะแนนรายห้อง'; wb.created = new Date();
+  const F = 'TH Sarabun New', SZ = 16;
+  const students = sortedStudents(c), tasks = c.tasks, dates = Object.keys(c.attendance).sort(), max = maxTotal(c);
+  const stats = new Map(students.map(s=>[s.id, statOf(c,s)]));
+  const rankOf = rankMap(students.map(s=>({s, st:stats.get(s.id)})));
+  const thin = {style:'thin', color:{argb:'FFD5D8E6'}}, border = {top:thin,left:thin,bottom:thin,right:thin};
+  const fill = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
+  const L = n => { let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=(n-m-1)/26; } return s; };
+  const GC = {'4':'FFBBF7D0','3.5':'FFDCFCE7','3':'FFBAE6FD','2.5':'FFE0F2FE','2':'FFFDE68A','1.5':'FFFED7AA','1':'FFFECACA','0':'FFFCA5A5','มส':'FFFDA4AF'};
+  const AC = {'มา':null,'ขาด':'FFFECACA','ลา':'FFBAE6FD','สาย':'FFFDE68A'};
+  const subText = `${c.subject?c.subject+' · ':''}นักเรียน ${students.length} คน · ส่งออกเมื่อ ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}`;
+  const sheet = (name, ncol, frozenCols, headRow) => {
+    const ws = wb.addWorksheet(name, {views:[{state:'frozen', xSplit:frozenCols, ySplit:headRow}],
+      pageSetup:{paperSize:9, orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, margins:{left:.4,right:.4,top:.5,bottom:.5,header:.2,footer:.2}}});
+    ws.mergeCells(1,1,1,Math.max(ncol,3)); const a = ws.getCell(1,1); a.value = `${name} — ${c.name}`;
+    a.font = {name:F, size:22, bold:true, color:{argb:'FF312E81'}}; a.alignment = {vertical:'middle'}; ws.getRow(1).height = 34;
+    ws.mergeCells(2,1,2,Math.max(ncol,3)); const b = ws.getCell(2,1); b.value = subText; b.font = {name:F, size:14, color:{argb:'FF656C8C'}};
+    ws.pageSetup.printTitlesRow = `${headRow}:${headRow}`;
+    return ws;
+  };
+  const head = (ws, rowNo, labels) => { const r = ws.getRow(rowNo); r.height = 46;
+    labels.forEach((l,i)=>{ const x = r.getCell(i+1); x.value = l; x.font = {name:F, size:SZ, bold:true, color:{argb:'FFFFFFFF'}};
+      x.fill = fill('FF4F46E5'); x.alignment = {horizontal:'center', vertical:'middle', wrapText:true}; x.border = border; }); };
+  const put = (ws, rowNo, vals, o={}) => { const r = ws.getRow(rowNo);
+    vals.forEach((val,i)=>{ const x = r.getCell(i+1); x.value = val; x.font = {name:F, size:SZ, bold:!!o.bold}; x.border = border;
+      x.alignment = {horizontal:(o.left||[]).includes(i)?'left':'center', vertical:'middle'};
+      if(o.fill) x.fill = fill(o.fill); else if(o.zebra) x.fill = fill('FFF6F7FC'); });
+    return r; };
+  const widths = (ws, arr) => arr.forEach((w,i)=> ws.getColumn(i+1).width = w);
+  const f = (formula, result) => result==null || result==='' ? {formula} : {formula, result};
+  const GRADE_F = p => `IF(${p}>=80,4,IF(${p}>=75,3.5,IF(${p}>=70,3,IF(${p}>=65,2.5,IF(${p}>=60,2,IF(${p}>=55,1.5,IF(${p}>=50,1,0)))))))`;
+
+  /* ---- 1) สรุปผล ---- */
+  {
+    const H = ['เลขที่','รหัส','ชื่อ-สกุล','คะแนนงาน','คะแนนเสริม',`รวม\n(เต็ม ${fmt(max)})`,'ร้อยละ','เกรด','อันดับ','มาเรียน %','ขาด','ลา','สาย','ส่งงาน','หมายเหตุ'];
+    const ws = sheet('สรุปผล', H.length, 3, 3); head(ws, 3, H);
+    students.forEach((s,i)=>{ const st = stats.get(s.id); const r = 4+i;
+      const sent = tasks.filter(t=>{ const val=c.scores[t.id]?.[s.id]; return val!=null&&val!==''; }).length;
+      const g = st.ms ? 'มส' : (st.grade==null ? '' : +st.grade);
+      const note = [tasks.length-sent>0 ? `ค้าง ${tasks.length-sent} งาน` : '', st.ms ? 'เวลาเรียนไม่ถึง 80%' : ''].filter(Boolean).join(', ');
+      put(ws, r, [s.no===''?'':(+s.no||s.no), s.code, s.name, r1(st.raw), st.bonus||'', f(`D${r}+N(E${r})`, r1(st.total)), r1(st.pct), g, max?rankOf.get(s.id):'',
+        st.att.pct==null?'':r1(st.att.pct), st.att.A, st.att.L, st.att.S, tasks.length?`${sent}/${tasks.length}`:'', note], {left:[2,14], zebra:i%2});
+      if(g!=='') ws.getCell(r,8).fill = fill(GC[String(g)]); ws.getCell(r,8).font = {name:F,size:SZ,bold:true}; ws.getCell(r,6).font = {name:F,size:SZ,bold:true};
+    });
+    const last = 3+students.length;
+    if(students.length){
+      const pcts = students.map(s=>stats.get(s.id).pct), tots = students.map(s=>stats.get(s.id).total);
+      [['ค่าเฉลี่ย','AVERAGE', a=>a.reduce((x,y)=>x+y,0)/a.length], ['สูงสุด','MAX', a=>Math.max(...a)], ['ต่ำสุด','MIN', a=>Math.min(...a)]].forEach(([label,fn,calc],k)=>{
+        put(ws, last+1+k, ['','',label,'','', f(`ROUND(${fn}(F4:F${last}),2)`, r1(calc(tots))), f(`ROUND(${fn}(G4:G${last}),2)`, r1(calc(pcts))), '','','','','','','',''], {bold:true, left:[2], fill:'FFEEF0FF'}); });
+      const g0 = last+6; ws.getCell(g0,3).value = 'การกระจายเกรด'; ws.getCell(g0,3).font = {name:F,size:SZ,bold:true};
+      const grades = ['4','3.5','3','2.5','2','1.5','1','0','มส'];
+      grades.forEach((g,i)=>{ const col = 4+i; const hc = ws.getCell(g0,col), vc = ws.getCell(g0+1,col);
+        hc.value = g==='มส'?g:+g; hc.font = {name:F,size:SZ,bold:true}; hc.fill = fill(GC[g]); hc.alignment = {horizontal:'center'}; hc.border = border;
+        const n = students.filter(s=>{ const st=stats.get(s.id); return (st.ms?'มส':st.grade)===g; }).length;
+        vc.value = f(`COUNTIF($H$4:$H$${last},${g==='มส'?'"มส"':g})`, n); vc.font = {name:F,size:SZ}; vc.alignment = {horizontal:'center'}; vc.border = border; });
+      ws.getCell(g0+1,3).value = 'จำนวน (คน)'; ws.getCell(g0+1,3).font = {name:F,size:SZ};
+    }
+    widths(ws, [8,12,34,13,13,14,11,9,9,12,8,8,8,10,26]);
+  }
+
+  /* ---- 2) คะแนน ---- */
+  {
+    const n = tasks.length, cB = 4+n, cT = 5+n, cP = 6+n, cG = 7+n;      // bonus / total / percent / grade columns
+    const H = ['เลขที่','รหัส','ชื่อ-สกุล', ...tasks.map(t=>`${t.name}\n(${CATS[t.cat]?.name||''})`), 'คะแนนเสริม','รวม','ร้อยละ','เกรด'];
+    const ws = sheet('คะแนน', H.length, 3, 4); head(ws, 3, H);
+    const tRange = r => n ? `SUM(${L(4)}${r}:${L(3+n)}${r})` : '0';
+    put(ws, 4, ['','','คะแนนเต็ม', ...tasks.map(t=>+t.max), '', f(tRange(4), max), 100, ''], {bold:true, left:[2], fill:'FFEEF0FF'});
+    students.forEach((s,i)=>{ const st = stats.get(s.id); const r = 5+i;
+      const cells = tasks.map(t=>{ const val=c.scores[t.id]?.[s.id]; return val==null||val==='' ? '' : +val; });
+      put(ws, r, [s.no===''?'':(+s.no||s.no), s.code, s.name, ...cells, st.bonus||'',
+        f(`${tRange(r)}+N(${L(cB)}${r})`, r1(st.total)),
+        f(`IF($${L(cT)}$4>0,MIN(100,ROUND(${L(cT)}${r}/$${L(cT)}$4*100,2)),0)`, r1(st.pct)),
+        max ? f(GRADE_F(`${L(cP)}${r}`), +st.grade) : ''], {left:[2], zebra:i%2});
+      tasks.forEach((t,j)=>{ if(cells[j]!=='' && cells[j] > +t.max) ws.getCell(r,4+j).fill = fill('FFFECACA'); });
+      ws.getCell(r,cT).font = {name:F,size:SZ,bold:true};
+      if(max){ ws.getCell(r,cG).fill = fill(GC[st.grade]); ws.getCell(r,cG).font = {name:F,size:SZ,bold:true}; }
+    });
+    const last = 4+students.length;
+    if(students.length){
+      put(ws, last+1, ['','','ค่าเฉลี่ย', ...tasks.map((t,j)=>f(`IFERROR(ROUND(AVERAGE(${L(4+j)}5:${L(4+j)}${last}),2),"")`, taskAvg(c,t)==null?null:r1(taskAvg(c,t)))), '',
+        f(`ROUND(AVERAGE(${L(cT)}5:${L(cT)}${last}),2)`, r1(classAvg(c,'total'))), f(`ROUND(AVERAGE(${L(cP)}5:${L(cP)}${last}),2)`, r1(classAvg(c,'pct'))), ''], {bold:true, left:[2], fill:'FFEEF0FF'});
+    }
+    widths(ws, [8,12,34, ...tasks.map(()=>14), 13,11,11,9]);
+  }
+
+  /* ---- 3) เช็คชื่อ ---- */
+  {
+    const n = dates.length, c0 = 3+n;
+    const H = ['เลขที่','ชื่อ-สกุล', ...dates.map(d=>fmtDate(d,{day:'numeric',month:'short',year:'2-digit'})), 'มา','ขาด','ลา','สาย','มาเรียน %'];
+    const ws = sheet('เช็คชื่อ', H.length, 2, 3); head(ws, 3, H);
+    students.forEach((s,i)=>{ const a = stats.get(s.id).att; const r = 4+i;
+      const cells = dates.map(d=>ATT[c.attendance[d][s.id]] || '');
+      const rng = n ? `${L(3)}${r}:${L(2+n)}${r}` : null;
+      const cnt = (label, val) => rng ? f(`COUNTIF(${rng},"${label}")`, val) : 0;
+      put(ws, r, [s.no===''?'':(+s.no||s.no), s.name, ...cells, cnt('มา',a.P), cnt('ขาด',a.A), cnt('ลา',a.L), cnt('สาย',a.S),
+        rng ? f(`IF(COUNTA(${rng})=0,"",ROUND((${L(c0)}${r}+${L(c0+3)}${r})/COUNTA(${rng})*100,1))`, a.pct==null?null:Math.round(a.pct*10)/10) : ''], {left:[1], zebra:i%2});
+      cells.forEach((x,j)=>{ if(AC[x]) ws.getCell(r,3+j).fill = fill(AC[x]); });
+      if(a.pct!=null && a.pct<80) ws.getCell(r,c0+4).fill = fill('FFFDA4AF');
+    });
+    if(!n){ ws.getCell(4+students.length+1,2).value = 'ยังไม่มีการเช็คชื่อ'; }
+    widths(ws, [8,34, ...dates.map(()=>11), 8,8,8,8,12]);
+  }
+
+  /* ---- 4) คะแนนเสริม ---- */
+  {
+    const H = ['วันที่','เลขที่','ชื่อ-สกุล','คะแนน','เหตุผล'];
+    const ws = sheet('คะแนนเสริม', H.length, 0, 3); head(ws, 3, H);
+    const byId = new Map(students.map(s=>[s.id,s]));
+    const log = [...c.bonus].filter(b=>byId.has(b.sid)).sort((a,b)=>a.ts-b.ts);
+    log.forEach((b,i)=>{ const s = byId.get(b.sid);
+      put(ws, 4+i, [fmtDate(b.date,{day:'numeric',month:'short',year:'2-digit'}), s.no===''?'':(+s.no||s.no), s.name, b.pts, b.reason||''], {left:[2,4], zebra:i%2});
+      ws.getCell(4+i,4).font = {name:F,size:SZ,bold:true,color:{argb:b.pts>=0?'FF12A150':'FFE11D48'}}; });
+    const last = 3+log.length;
+    if(log.length) put(ws, last+1, ['','','รวมทั้งหมด', f(`SUM(D4:D${last})`, log.reduce((a,b)=>a+b.pts,0)), ''], {bold:true, left:[2], fill:'FFEEF0FF'});
+    else ws.getCell(4,3).value = 'ยังไม่มีรายการ';
+    widths(ws, [14,8,34,10,40]);
+  }
+  return wb;
 }
 
 /* ================= students ================= */
@@ -724,7 +1088,7 @@ function parseBulk(text, startNo){
 /* ================= dialog & toast ================= */
 const dlg = document.getElementById('dlg'), dlgForm = document.getElementById('dlgForm');
 let dlgSubmit = null;
-function openDialog(html, onSubmit){ dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.showModal(); }
+function openDialog(html, onSubmit, wide){ dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
 function closeDialog(){ dlg.close(); }
 function askConfirm(title, msg, okLabel, onOk){
   openDialog(`<h2>${esc(title)}</h2><p class="muted" style="margin-top:0">${esc(msg)}</p>
@@ -826,20 +1190,23 @@ menuBtn.addEventListener('click', e=>{ e.stopPropagation(); const o=menuPop.clas
 document.addEventListener('click', e=>{ if(!menuPop.contains(e.target)) closeMenu(); });
 
 document.getElementById('tabs').addEventListener('click', e=>{
-  const b = e.target.closest('[data-tab]'); if(!b) return; tab = b.dataset.tab; render(); window.scrollTo({top:0});
+  const b = e.target.closest('[data-tab]'); if(!b) return; tab = b.dataset.tab; render(); animateView(); window.scrollTo({top:0});
 });
 
 document.addEventListener('click', e=>{
-  const el = e.target.closest('[data-act],[data-goto],[data-task],[data-att],[data-day],[data-date],[data-pts],[data-delbonus],[data-delstu]');
+  const el = e.target.closest('[data-act],[data-goto],[data-task],[data-att],[data-day],[data-date],[data-pts],[data-delbonus],[data-delstu],[data-stu],[data-allpts]');
   if(!el) return;
   const c = C(); const d = el.dataset;
-  if(d.goto){ tab=d.goto; render(); return; }
+  if(d.goto){ tab=d.goto; render(); animateView(); return; }
+  if(d.stu){ studentDialog(d.stu); return; }
+  if(d.allpts){ bonusAll(+d.allpts); return; }
   if(d.task){ taskDialog(c.tasks.find(t=>t.id===d.task)); return; }
   if(d.att){
     const sid = el.closest('tr').dataset.sid; const day = (c.attendance[attDate] ||= {});
     if(day[sid]===d.att) delete day[sid]; else day[sid]=d.att;
     if(!Object.keys(day).length) delete c.attendance[attDate];
-    save(); const y=window.scrollY; render(); window.scrollTo(0,y); return;
+    save(); const y=window.scrollY; render(); window.scrollTo(0,y);
+    document.querySelector(`tr[data-sid="${sid}"] [data-att="${d.att}"][aria-pressed="true"]`)?.classList.add('pop'); return;
   }
   if(d.day!=null){ if(d.day==='0') attDate=today(); else { const x=new Date(attDate+'T00:00:00'); x.setDate(x.getDate()+ +d.day); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); attDate=x.toISOString().slice(0,10);} render(); return; }
   if(d.date){ attDate=d.date; render(); window.scrollTo({top:0,behavior:'smooth'}); return; }
@@ -853,7 +1220,7 @@ document.addEventListener('click', e=>{
         <div class="dlg-foot"><button type="button" class="btn" data-close>ยกเลิก</button><button class="btn pri">ให้คะแนน</button></div>`,
         f=>{ const p=+f.f_pts.value; if(!p) return false; setTimeout(()=>addBonus(sid,p,f.f_rs.value.trim()),0); });
       document.getElementById('f_pts').select();
-    } else addBonus(sid, +d.pts);
+    } else { floatPts(el, +d.pts); addBonus(sid, +d.pts); }
     return;
   }
   if(d.delbonus){
@@ -869,7 +1236,9 @@ document.addEventListener('click', e=>{
   switch(d.act){
     case 'newClass': classDialog(false); break;
     case 'editClass': if(c) classDialog(true); break;
-    case 'demo': demo(); break;
+    case 'demo': demo(); animateView(); break;
+    case 'random': randomDialog(); break;
+    case 'xlsx': exportXLSX(); break;
     case 'connect': connectDialog(); break;
     case 'addTask': taskDialog(null); break;
     case 'allPresent': { const day=(c.attendance[attDate] ||= {}); c.students.forEach(s=>{ if(!day[s.id]) day[s.id]='P'; }); save(); render(); toast('เช็คมาทุกคนที่ยังไม่ได้เช็คแล้ว'); break; }
@@ -898,7 +1267,8 @@ document.addEventListener('click', e=>{
 });
 
 document.addEventListener('change', e=>{
-  if(e.target.id==='classSel'){ S.cur=e.target.value; query=''; save(); render(); }
+  if(e.target.id==='classSel'){ S.cur=e.target.value; query=''; save(); render(); animateView(); }
+  if(e.target.id==='sumSort'){ sumSort=e.target.value; render(); }
   if(e.target.id==='attDate' && e.target.value){ attDate=e.target.value; render(); }
 });
 
@@ -912,7 +1282,18 @@ document.addEventListener('input', e=>{
     const s = C().students.find(x=>x.id===t.closest('tr').dataset.sid); s[t.dataset.f] = t.value.trim(); save();
   }
 });
-document.addEventListener('focusin', e=>{ if(e.target.classList.contains('cell')) e.target.select(); });
+document.addEventListener('focusin', e=>{ if(e.target.classList?.contains('cell')) e.target.select(); });
+document.addEventListener('paste', e=>{
+  const t = e.target; if(!t.classList?.contains('cell')) return;
+  const txt = (e.clipboardData?.getData('text') || '').replace(/\r/g,'').replace(/\n+$/,'');
+  if(!/[\n\t]/.test(txt)) return;
+  e.preventDefault();
+  const r0 = +t.dataset.r, c0 = +t.dataset.c; let n = 0;
+  txt.split('\n').forEach((row,i)=>row.split('\t').forEach((val,j)=>{
+    const cell = document.querySelector(`#scoreGrid .cell[data-r="${r0+i}"][data-c="${c0+j}"]`);
+    if(cell){ cell.value = val.trim(); onScoreInput(cell); n++; } }));
+  toast(`วางคะแนน ${n} ช่องแล้ว`);
+});
 
 document.addEventListener('keydown', e=>{
   const t = e.target;
@@ -940,7 +1321,7 @@ document.addEventListener('focusout', e=>{
 /* ================= boot ================= */
 try{ const th=localStorage.getItem('scorebook.theme'); if(th) document.documentElement.dataset.theme=th; }catch(e){}
 if(!S.cur && S.classes[0]) S.cur = S.classes[0].id;
-render();
+render(); animateView();
 if(API) pullFromSheet(); else setStatus('local');
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && API) pullFromSheet(); });
 window.addEventListener('pagehide', ()=>{ if(API && pending().any && navigator.sendBeacon){ const p=pending(); navigator.sendBeacon(API.url, JSON.stringify({action:'save', pin:API.pin, classes:p.changed, deleted:p.deleted, meta:metaObj()})); } });

@@ -194,5 +194,34 @@ function writeReadable_(ss, c) {
       SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('สาย').setBackground('#fdf3e2').setFontColor('#d97706').setRanges([rng]).build()
     ]);
   }
-  return [scoreName, attName];
+  band_(sh, 2, body.length, head.length);
+  band_(sa, 1, ab.length, ah.length);
+
+  // --- คะแนนเสริม ---
+  const bonusName = base + ' คะแนนเสริม';
+  const byId = {}; students.forEach(s => byId[s.id] = s);
+  const log = (c.bonus || []).filter(b => byId[b.sid]).sort((a, b) => a.ts - b.ts);
+  const bh = ['วันที่', 'เลขที่', 'ชื่อ-สกุล', 'คะแนน', 'เหตุผล'];
+  const bb = log.map(b => [b.date, byId[b.sid].no, byId[b.sid].name, +b.pts, b.reason || '']);
+  const sb = sheetFor_(ss, bonusName);
+  sb.getRange(1, 1, 1, bh.length).setValues([bh]).setFontWeight('bold').setBackground('#eef0ff');
+  if (bb.length) {
+    sb.getRange(2, 1, bb.length, 1).setNumberFormat('@');
+    sb.getRange(2, 1, bb.length, bh.length).setValues(bb);
+    sb.getRange(bb.length + 2, 3, 1, 2).setValues([['รวมทั้งหมด', '=SUM(D2:D' + (bb.length + 1) + ')']]).setFontWeight('bold');
+  }
+  sb.setFrozenRows(1); sb.setColumnWidth(3, 220); sb.setColumnWidth(5, 260);
+  band_(sb, 1, bb.length, bh.length);
+
+  return [scoreName, attName, bonusName];
+}
+
+// สลับสีแถวให้อ่านง่าย + จัดกึ่งกลาง
+function band_(sh, headRow, n, w) {
+  sh.getBandings().forEach(b => b.remove());
+  if (n > 0) {
+    sh.getRange(headRow, 1, n + 1, w).applyRowBanding(SpreadsheetApp.BandingTheme.INDIGO, true, false);
+    sh.getRange(headRow, 1, n + 1, w).setHorizontalAlignment('center').setVerticalAlignment('middle');
+  }
+  sh.getRange(headRow, 1, 1, w).setFontColor('#ffffff').setBackground('#4f46e5').setFontWeight('bold');
 }
