@@ -524,8 +524,22 @@ function statOf(c, s){
 }
 
 /* ================= render shell ================= */
+let lastViewKey = '';
 function render(){
+  // จำตำแหน่งเลื่อนของหน้าและตาราง เพื่อไม่ให้เด้งกลับบนสุดเวลาวาดใหม่ในหน้าเดิม
+  const key = tab + '|' + S.cur + '|' + (tab==='att' ? attDate : '');
+  const same = key === lastViewKey; lastViewKey = key;
+  const keep = same ? [...document.querySelectorAll('#view .tbl-wrap, #view .log')].map(x=>[x.scrollTop, x.scrollLeft]) : null;
+  const wy = window.scrollY;
   renderClassPick();
+  if(same) document.getElementById('view').classList.remove('enter');   // ไม่เล่นเอฟเฟกต์เข้าซ้ำ
+  _render();
+  if(same){
+    document.querySelectorAll('#view .tbl-wrap, #view .log').forEach((x,i)=>{ if(keep[i]){ x.scrollTop = keep[i][0]; x.scrollLeft = keep[i][1]; } });
+    if(Math.abs(window.scrollY - wy) > 1) window.scrollTo({top: wy, behavior: 'instant'});
+  }
+}
+function _render(){
   document.querySelectorAll('#tabs button').forEach(b=>{
     b.setAttribute('aria-selected', b.dataset.tab===tab);
   });
@@ -821,6 +835,7 @@ const calm = () => { try{ return matchMedia('(prefers-reduced-motion: reduce)').
 function animateView(){
   const v = document.getElementById('view'); if(calm()) return;
   v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter');
+  clearTimeout(animateView.t); animateView.t = setTimeout(()=>v.classList.remove('enter'), 1500);
   v.querySelectorAll('tbody').forEach(tb=>[...tb.rows].slice(0,40).forEach((tr,i)=>tr.style.setProperty('--i',i)));
   v.querySelectorAll('b[data-count]').forEach(countUp);
 }
@@ -1210,7 +1225,7 @@ document.addEventListener('click', e=>{
     const sid = el.closest('tr').dataset.sid; const day = (c.attendance[attDate] ||= {});
     if(day[sid]===d.att) delete day[sid]; else day[sid]=d.att;
     if(!Object.keys(day).length) delete c.attendance[attDate];
-    save(); const y=window.scrollY; render(); window.scrollTo(0,y);
+    save(); render();
     document.querySelector(`tr[data-sid="${sid}"] [data-att="${d.att}"][aria-pressed="true"]`)?.classList.add('pop'); return;
   }
   if(d.day!=null){ if(d.day==='0') attDate=today(); else { const x=new Date(attDate+'T00:00:00'); x.setDate(x.getDate()+ +d.day); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); attDate=x.toISOString().slice(0,10);} render(); return; }
