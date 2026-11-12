@@ -318,6 +318,7 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <button data-act="print" role="menuitem">🖨 พิมพ์หน้านี้</button>
         <hr>
         <button data-act="connect" role="menuitem">🔗 เชื่อมต่อ Google Sheet</button>
+        <button data-act="openSheet" role="menuitem">📊 เปิด Google Sheet</button>
         <button data-act="theme" role="menuitem">◐ สลับโหมดมืด/สว่าง</button>
         <button data-act="delClass" role="menuitem" class="danger" style="color:var(--bad)">🗑 ลบห้องนี้</button>
       </div>
@@ -374,6 +375,9 @@ function save(){
 
 /* ---------- Google Sheet sync (Apps Script web app) ---------- */
 const API_KEY = 'scorebook.api', BASE_KEY = 'scorebook.syncbase';
+// ลิงก์ฐานข้อมูลของครูธนพล — ฝังไว้ เครื่องใหม่จึงใส่แค่ PIN (ไม่มี PIN อ่าน/เขียนไม่ได้)
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbwJsr4hqB6Xq5RRTQFFeWZ3KxaTmpXQcNg52Vn5kjouwKiX9LO9OI3TxuRU-c18e8PDuA/exec';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1dmwEbCLtZ-Dvk5Z0OrJIEeLO1vRvEuklAe-U9e9N9g4/edit';
 let API = (()=>{ try{ const a=JSON.parse(localStorage.getItem(API_KEY)); return a&&a.url ? a : null; }catch(e){ return null; } })();
 let base = (()=>{ try{ return JSON.parse(localStorage.getItem(BASE_KEY))||{}; }catch(e){ return {}; } })();
 let syncTimer, syncing = false, syncAgain = false, lastErr = null;
@@ -447,9 +451,10 @@ async function pullFromSheet(){
 }
 function connectDialog(){
   openDialog(`<h2>เชื่อมต่อ Google Sheet</h2>
-    <p class="hint" style="margin-top:0">วางลิงก์ Web app จาก Apps Script (ลงท้ายด้วย <b>/exec</b>) และรหัส PIN ที่ตั้งไว้ใน Code.gs — ตั้งค่าครั้งเดียวต่อเครื่อง</p>
-    <div class="field"><label for="f_url">ลิงก์ Web app</label><input class="ctl" id="f_url" required placeholder="https://script.google.com/macros/s/…/exec" value="${esc(API?.url||'')}"></div>
-    <div class="field"><label for="f_pin">รหัส PIN</label><input class="ctl" id="f_pin" type="password" required autocomplete="current-password" value="${esc(API?.pin||'')}"></div>
+    <p class="hint" style="margin-top:0">ลิงก์ฐานข้อมูลใส่ไว้ให้แล้ว พิมพ์แค่ <b>รหัส PIN</b> แล้วกดเชื่อมต่อ (ทำครั้งเดียวต่อเครื่อง)</p>
+    <div class="field"><label for="f_pin">รหัส PIN</label><input class="ctl" id="f_pin" type="password" required autofocus autocomplete="current-password" value="${esc(API?.pin||'')}"></div>
+    <details class="hint" style="margin:4px 0 8px"><summary style="cursor:pointer">เปลี่ยนลิงก์ Web app (ไม่ต้องแก้ ถ้าใช้ชีตเดิม)</summary>
+      <div class="field" style="margin-top:8px"><label for="f_url">ลิงก์ Web app (ลงท้ายด้วย /exec)</label><input class="ctl" id="f_url" required placeholder="https://script.google.com/macros/s/…/exec" value="${esc(API?.url||DEFAULT_API_URL)}"></div></details>
     <p class="hint" id="f_msg" role="alert"></p>
     <div class="dlg-foot">${API?'<button type="button" class="btn danger left" id="disc">ยกเลิกการเชื่อมต่อ</button>':''}<button type="button" class="btn" data-close>ปิด</button><button class="btn pri" id="f_go">เชื่อมต่อ</button></div>`,
   f=>{
@@ -1240,6 +1245,7 @@ document.addEventListener('click', e=>{
     case 'random': randomDialog(); break;
     case 'xlsx': exportXLSX(); break;
     case 'connect': connectDialog(); break;
+    case 'openSheet': closeMenu(); window.open(SHEET_URL, '_blank', 'noopener'); break;
     case 'addTask': taskDialog(null); break;
     case 'allPresent': { const day=(c.attendance[attDate] ||= {}); c.students.forEach(s=>{ if(!day[s.id]) day[s.id]='P'; }); save(); render(); toast('เช็คมาทุกคนที่ยังไม่ได้เช็คแล้ว'); break; }
     case 'clearDay': { const old=c.attendance[attDate]; const dt=attDate; delete c.attendance[attDate]; save(); render(); toast('ล้างการเช็คชื่อวันนี้แล้ว', ()=>{ c.attendance[dt]=old; save(); render(); }); break; }
