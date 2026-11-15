@@ -1183,7 +1183,7 @@ function parseBulk(text, startNo){
 /* ================= dialog & toast ================= */
 const dlg = document.getElementById('dlg'), dlgForm = document.getElementById('dlgForm');
 let dlgSubmit = null;
-function openDialog(html, onSubmit, wide){ dlgForm.onchange = dlgForm.onclick = null; dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.remove('xwide'); dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
+function openDialog(html, onSubmit, wide){ dlgForm.onchange = dlgForm.onclick = dlgForm.oninput = null; dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.remove('xwide'); dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
 function closeDialog(){ dlg.close(); }
 function askConfirm(title, msg, okLabel, onOk){
   openDialog(`<h2>${esc(title)}</h2><p class="muted" style="margin-top:0">${esc(msg)}</p>
@@ -1319,7 +1319,7 @@ async function buildSummaryImages(c, o){
     g.fillStyle='rgba(255,255,255,.07)'; g.beginPath(); g.arc(hx+hw-250,hy+hh+40,130,0,7); g.fill();
     g.restore();
     text(c.name, hx+40, hy+58, font(700,46), '#fff', 'left', hw-420);
-    text(c.subject||'สรุปผลการเรียน', hx+40, hy+104, font(500,24), 'rgba(255,255,255,.88)', 'left', hw-420);
+    text([c.subject||'สรุปผลการเรียน', o.teacher?'ครูผู้สอน '+o.teacher.replace(/^ครู\s*/,''):''].filter(Boolean).join('   ·   '), hx+40, hy+104, font(500,24), 'rgba(255,255,255,.88)', 'left', hw-420);
     text('สรุปผลการเรียน', hx+hw-40, hy+54, font(600,22), 'rgba(255,255,255,.92)', 'right');
     text(dateStr + (pages>1?`  ·  หน้า ${p+1}/${pages}`:''), hx+hw-40, hy+92, font(400,20), 'rgba(255,255,255,.8)', 'right');
     const chips = [['นักเรียน', n+' คน']];
@@ -1415,8 +1415,10 @@ function imageExportDialog(){
   if(!S.classes.length){ toast('ยังไม่มีห้องเรียน'); return; }
   let cls = C(), pages = [], seq = 0, theme = localStorage.getItem('scorebook.imgtheme') || 'violet';
   if(!IMG_THEMES[theme]) theme = 'violet';
+  let teacherName = (()=>{ try{ const v = localStorage.getItem('scorebook.teacher'); return v===null ? 'ครูธนพล' : v; }catch(e){ return 'ครูธนพล'; } })();
   const html = () => `<h2>ส่งออกสรุปเป็นรูปภาพ</h2>
     <div class="field"><label for="im_cls">ห้องเรียน</label><select class="ctl" id="im_cls">${S.classes.map(k=>`<option value="${k.id}" ${k.id===cls.id?'selected':''}>${esc(k.name)}${k.subject?' · '+esc(k.subject):''}</option>`).join('')}</select></div>
+    <div class="field"><label for="im_teacher">ชื่อครูผู้สอน <span class="hint">(แสดงใต้ชื่อห้อง · เว้นว่างถ้าไม่ต้องการ)</span></label><input class="ctl" id="im_teacher" maxlength="60" value="${esc(teacherName)}" placeholder="เช่น ครูสมชาย ใจดี"></div>
     <div class="field"><label>ธีมสี</label><div class="im-sw">${Object.entries(IMG_THEMES).map(([k,v])=>`<button type="button" class="im-swb" data-theme="${k}" aria-pressed="${k===theme}" title="${v.name}"><i style="background:linear-gradient(135deg,${v.head[0]},${v.head[1]} 55%,${v.head[2]})"></i><span>${v.name}</span></button>`).join('')}</div></div>
     <div class="field"><label>แสดงในรูป</label><div class="im-chk">
       <label><input type="checkbox" id="im_sum" checked> คะแนนรวม · ร้อยละ · เกรด</label>
@@ -1431,7 +1433,7 @@ function imageExportDialog(){
     <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>
       <button type="button" class="btn" id="im_share" hidden>แชร์</button>
       <button type="button" class="btn pri" id="im_dl">ดาวน์โหลดรูป (PNG)</button></div>`;
-  const opts = () => ({theme, sort:document.getElementById('im_sort').value, summary:document.getElementById('im_sum').checked, att:document.getElementById('im_att').checked,
+  const opts = () => ({theme, teacher:document.getElementById('im_teacher').value.trim(), sort:document.getElementById('im_sort').value, summary:document.getElementById('im_sum').checked, att:document.getElementById('im_att').checked,
     bonus:document.getElementById('im_bonus').checked, code:document.getElementById('im_code').checked,
     tasks:[...document.querySelectorAll('#im_tasks [data-tk]:checked')].map(x=>x.dataset.tk)});
   const refresh = async () => {
@@ -1446,6 +1448,7 @@ function imageExportDialog(){
   const blobs = () => Promise.all(pages.map(cv=>new Promise(r=>cv.toBlob(r,'image/png'))));
   openDialog(html(), ()=>false, true); dlg.classList.add('xwide');
   const root = dlgForm;
+  let tmr; root.oninput = e=>{ if(e.target.id==='im_teacher'){ clearTimeout(tmr); tmr=setTimeout(()=>{ try{ localStorage.setItem('scorebook.teacher', e.target.value.trim()); }catch(_){} refresh(); }, 350); } };
   root.onchange = e=>{
     if(e.target.id==='im_cls'){ cls = S.classes.find(k=>k.id===e.target.value) || cls; root.querySelector('#im_tasks').innerHTML = cls.tasks.length?cls.tasks.map(t=>`<label><input type="checkbox" data-tk="${t.id}" checked> <i class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></i>${esc(t.name)} <span class="hint">เต็ม ${fmt(+t.max)}</span></label>`).join(''):'<span class="hint">ยังไม่มีงาน</span>'; }
     refresh();
