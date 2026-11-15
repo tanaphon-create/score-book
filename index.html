@@ -359,6 +359,7 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <hr>
         <button data-act="connect" role="menuitem">🔗 เชื่อมต่อ Google Sheet</button>
         <button data-act="openSheet" role="menuitem">📊 เปิด Google Sheet</button>
+        <button data-act="studentPage" role="menuitem">🔎 หน้านักเรียนดูคะแนน</button>
         <button data-act="theme" role="menuitem">◐ สลับโหมดมืด/สว่าง</button>
         <button data-act="delClass" role="menuitem" class="danger" style="color:var(--bad)">🗑 ลบห้องนี้</button>
       </div>
@@ -488,6 +489,30 @@ async function pullFromSheet(){
     if(JSON.stringify(S.classes)!==before && !document.activeElement?.matches('input,textarea')) render();
     setStatus('ok');
   }catch(e){ lastErr = e; setStatus('err', e?.error==='pin' ? 'รหัสไม่ถูกต้อง' : 'ออฟไลน์'); }
+}
+/* ---------- หน้านักเรียนดูคะแนน (student.html) ---------- */
+async function studentPageDialog(){
+  if(!API){ toast('เชื่อมต่อ Google Sheet ก่อน แล้วจึงเปิดหน้านักเรียนได้'); connectDialog(); return; }
+  const link = new URL('student.html', location.href).href.replace(/\?.*$/,'');
+  let pub = null;
+  const draw = () => openDialog(`<h2>หน้านักเรียนดูคะแนน</h2>
+    <p class="hint" style="margin-top:0">นักเรียนพิมพ์เลขประจำตัว แล้วเห็นคะแนน การมาเรียน และคะแนนเสริมของตัวเองทั้งหมด (ไม่ต้องใช้ PIN)</p>
+    <div class="field"><label>สถานะ</label>
+      <div>${pub===null?'<span class="chip">กำลังตรวจสอบ…</span>':pub?'<span class="chip ok">เปิดอยู่ — นักเรียนค้นหาได้</span>':'<span class="chip warn">ปิดอยู่ — นักเรียนยังดูไม่ได้</span>'}</div></div>
+    <div class="field"><label for="f_link">ลิงก์ให้นักเรียน</label><input class="ctl" id="f_link" readonly value="${esc(link)}" onfocus="this.select()"></div>
+    <p class="hint">⚠ หน้านี้เป็นสาธารณะ ใครมีลิงก์และรู้เลขประจำตัวก็เห็นคะแนนของเลขนั้นได้ แนะนำให้เปิดเฉพาะช่วงประกาศคะแนน แล้วปิดเมื่อเสร็จ</p>
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิดหน้าต่าง</button>
+      <button type="button" class="btn" id="spCopy">คัดลอกลิงก์</button>
+      <button type="button" class="btn pri" id="spToggle" ${pub===null?'disabled':''}>${pub?'ปิดหน้านักเรียน':'เปิดหน้านักเรียน'}</button></div>`, ()=>false);
+  draw();
+  const bind = () => {
+    const cp = document.getElementById('spCopy'), tg = document.getElementById('spToggle');
+    cp && (cp.onclick = async()=>{ try{ await navigator.clipboard.writeText(link); toast('คัดลอกลิงก์แล้ว'); }catch(e){ document.getElementById('f_link').select(); toast('เลือกลิงก์ไว้แล้ว กด Ctrl+C'); } });
+    tg && (tg.onclick = async()=>{ tg.disabled = true; try{ const j = await api({action:'setpublish', on: !pub}); pub = !!j.publish; toast(pub?'เปิดหน้านักเรียนแล้ว':'ปิดหน้านักเรียนแล้ว'); }catch(e){ toast('ทำรายการไม่สำเร็จ ('+(e?.error==='pin'?'รหัสไม่ถูกต้อง':'ลองใหม่')+')'); } draw(); bind(); });
+  };
+  bind();
+  try{ const j = await api({action:'ping'}); pub = j.publish===undefined ? false : !!j.publish; }catch(e){ pub = false; }
+  draw(); bind();
 }
 function connectDialog(){
   openDialog(`<h2>เชื่อมต่อ Google Sheet</h2>
@@ -1300,6 +1325,7 @@ document.addEventListener('click', e=>{
     case 'random': randomDialog(); break;
     case 'xlsx': exportXLSX(); break;
     case 'connect': connectDialog(); break;
+    case 'studentPage': closeMenu(); studentPageDialog(); break;
     case 'openSheet': closeMenu(); window.open(SHEET_URL, '_blank', 'noopener'); break;
     case 'addTask': taskDialog(null); break;
     case 'allPresent': { const day=(c.attendance[attDate] ||= {}); c.students.forEach(s=>{ if(!day[s.id]) day[s.id]='P'; }); save(); render(); toast('เช็คมาทุกคนที่ยังไม่ได้เช็คแล้ว'); break; }

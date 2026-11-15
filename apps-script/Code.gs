@@ -10,7 +10,7 @@ const PIN = 'เปลี่ยนรหัสนี้';
 
 // ถ้าสคริปต์ไม่ได้สร้างจากเมนู ส่วนขยาย > Apps Script ของชีตโดยตรง ให้ใส่รหัสไฟล์ชีตที่นี่ (ส่วนที่อยู่ระหว่าง /d/ กับ /edit ในลิงก์)
 const SPREADSHEET_ID = '';
-function ss_() { return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : ss_(); }
+function ss_() { return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet(); }
 
 const DATA_SHEET = '_data';      // ชีตเก็บข้อมูลดิบ (ซ่อนไว้) — อย่าแก้ไขด้วยมือ
 const CHUNK = 45000;             // 1 เซลล์เก็บได้ไม่เกิน 50,000 ตัวอักษร
@@ -24,8 +24,14 @@ function doPost(e) {
   let p = {};
   try { p = JSON.parse(e.postData.contents); } catch (_) {}
   try {
+    // หน้านักเรียน: ค้นด้วยเลขประจำตัว ไม่ต้องใช้ PIN (ส่งเฉพาะข้อมูลของคนนั้น และเฉพาะเมื่อครูเปิดไว้)
+    if (p.action === 'student') return out_(studentLookup_(p.code));
     if (String(p.pin) !== String(PIN)) return out_({ok: false, error: 'pin'});
-    if (p.action === 'ping') return out_({ok: true});
+    if (p.action === 'ping') return out_({ok: true, publish: isPublished_()});
+    if (p.action === 'setpublish') {
+      PropertiesService.getScriptProperties().setProperty('PUBLISH', p.on ? '1' : '0');
+      return out_({ok: true, publish: isPublished_()});
+    }
     if (p.action === 'load') return out_(Object.assign({ok: true}, load_()));
     if (p.action === 'save') {
       const lock = LockService.getScriptLock();
@@ -41,6 +47,38 @@ function doPost(e) {
 
 function out_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ---------------- หน้านักเรียนดูคะแนน (สาธารณะ) ---------------- */
+function isPublished_() { return PropertiesService.getScriptProperties().getProperty('PUBLISH') === '1'; }
+
+function studentLookup_(code) {
+  if (!isPublished_()) return {ok: false, error: 'closed'};
+  code = String(code == null ? '' : code).trim();
+  if (!code || code.length > 30) return {ok: false, error: 'code'};
+  // กันการไล่เดาเลข: จำกัดจำนวนครั้งต่อนาทีของทั้งระบบ
+  const cache = CacheService.getScriptCache();
+  const n = Number(cache.get('lk') || 0);
+  if (n >= 90) return {ok: false, error: 'busy'};
+  cache.put('lk', String(n + 1), 60);
+
+  const found = [];
+  load_().classes.forEach(c => {
+    const st = (c.students || []).find(x => String(x.code).trim() === code);
+    if (!st) return;
+    const sc = {};
+    (c.tasks || []).forEach(t => { const v = c.scores && c.scores[t.id] && c.scores[t.id][st.id]; sc[t.id] = (v === undefined || v === '') ? null : v; });
+    const att = [];
+    Object.keys(c.attendance || {}).sort().forEach(d => { const v = c.attendance[d][st.id]; if (v) att.push({d: d, v: v}); });
+    found.push({
+      cls: c.name, subject: c.subject || '',
+      student: {no: st.no, code: st.code, name: st.name},
+      tasks: (c.tasks || []).map(t => ({name: t.name, max: t.max, cat: t.cat, score: sc[t.id]})),
+      bonus: (c.bonus || []).filter(b => b.sid === st.id).map(b => ({pts: b.pts, reason: b.reason, date: b.date})),
+      attendance: att
+    });
+  });
+  return found.length ? {ok: true, results: found} : {ok: false, error: 'notfound'};
 }
 
 /* ---------------- raw storage ---------------- */
