@@ -256,6 +256,15 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px
 /* ---------- dialog / menu / toast ---------- */
 dialog{border:1px solid var(--line);border-radius:22px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 30px 80px -10px rgba(0,0,20,.45);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
 dialog.wide{width:min(560px,calc(100vw - 32px))}
+dialog.xwide{width:min(940px,calc(100vw - 24px))}
+.im-sw{display:flex;gap:8px;flex-wrap:wrap}
+.im-swb{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-weight:600;font-size:13.5px}
+.im-swb i{width:30px;height:30px;border-radius:9px;display:block}
+.im-swb[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 20%,transparent)}
+.im-chk{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px}
+.im-chk label{display:flex;align-items:center;gap:7px;font-weight:500;font-size:14px}
+.im-chk input{width:18px;height:18px;accent-color:var(--brand)}
+.im-prev{margin-top:6px;border:1px solid var(--line);border-radius:14px;padding:8px;background:var(--surface-2);max-height:60vh;overflow:auto}
 dialog[open]{animation:dlg .32s var(--ease)}
 @keyframes dlg{from{opacity:0;transform:translateY(18px) scale(.96)}}
 dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation:fade .25s ease}
@@ -351,6 +360,7 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <hr>
         <button data-act="random" role="menuitem">🎲 สุ่มชื่อนักเรียน</button>
         <hr>
+        <button data-act="img" role="menuitem">🖼 ส่งออกสรุปเป็นรูปภาพ (PNG)</button>
         <button data-act="xlsx" role="menuitem">⬇ ส่งออก Excel / Google Sheet (.xlsx)</button>
         <button data-act="csv" role="menuitem">⬇ ส่งออกแบบ CSV</button>
         <button data-act="backup" role="menuitem">💾 สำรองข้อมูลทั้งหมด (.json)</button>
@@ -873,7 +883,7 @@ function viewSum(v, c){
       <option value="low" ${sumSort==='low'?'selected':''}>คะแนนน้อย → มาก</option>
       <option value="att" ${sumSort==='att'?'selected':''}>มาเรียนน้อยสุดก่อน</option>
     </select>
-    <div class="grow"></div><button class="btn" data-act="print">🖨 พิมพ์</button><button class="btn pri" data-act="xlsx">⬇ ส่งออก Excel / Sheet</button></div>
+    <div class="grow"></div><button class="btn" data-act="print">🖨 พิมพ์</button><button class="btn" data-act="img">🖼 รูปภาพ</button><button class="btn pri" data-act="xlsx">⬇ ส่งออก Excel / Sheet</button></div>
   <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
     <th>อันดับ</th><th>คะแนนงาน</th><th>เสริม</th><th>รวม / ${fmt(maxTotal(c))}</th><th>ร้อยละ</th><th>เกรด</th><th>มาเรียน</th><th>ส่งงาน</th><th>หมายเหตุ</th></tr></thead><tbody>
   ${rows.map(({s,st})=>{ const sent=c.tasks.filter(t=>{const val=c.scores[t.id]?.[s.id]; return val!=null&&val!==''}).length; const miss=c.tasks.length-sent; const rk=rankOf.get(s.id);
@@ -1173,7 +1183,7 @@ function parseBulk(text, startNo){
 /* ================= dialog & toast ================= */
 const dlg = document.getElementById('dlg'), dlgForm = document.getElementById('dlgForm');
 let dlgSubmit = null;
-function openDialog(html, onSubmit, wide){ dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
+function openDialog(html, onSubmit, wide){ dlgForm.onchange = dlgForm.onclick = null; dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.remove('xwide'); dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
 function closeDialog(){ dlg.close(); }
 function askConfirm(title, msg, okLabel, onOk){
   openDialog(`<h2>${esc(title)}</h2><p class="muted" style="margin-top:0">${esc(msg)}</p>
@@ -1235,6 +1245,223 @@ async function download(name, content, type){
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
   return true;
 }
+/* ================= ส่งออกสรุปเป็นรูปภาพ (PNG) ================= */
+const IMG_THEMES = {
+  violet:{name:'ม่วงฟ้า',  dark:false, bg:'#eceefb', card:'#ffffff', head2:'#f1f2fb', ink:'#151930', muted:'#68709a', line:'#e4e7f3', zebra:'#f8f9fd', head:['#5b4bff','#a855f7','#06b6d4'], accent:'#5b4bff'},
+  ocean: {name:'ทะเล',      dark:false, bg:'#e8f5f6', card:'#ffffff', head2:'#eef7f8', ink:'#10282e', muted:'#5b7880', line:'#dcebed', zebra:'#f5fafb', head:['#0369a1','#0891b2','#10b981'], accent:'#0891b2'},
+  sunset:{name:'พระอาทิตย์ตก', dark:false, bg:'#fdeff2', card:'#ffffff', head2:'#fdf3f5', ink:'#2b1420', muted:'#86606e', line:'#f4dfe5', zebra:'#fff8f9', head:['#f97316','#ec4899','#8b5cf6'], accent:'#e0457f'},
+  night: {name:'กลางคืน',   dark:true,  bg:'#090b1a', card:'#12152b', head2:'#1a1e3a', ink:'#eceefb', muted:'#8e96bd', line:'#262b4c', zebra:'#161a33', head:['#6d5dfc','#c084fc','#22d3ee'], accent:'#8b7dff'}
+};
+const IMG_ST = {
+  light:{ok:['#12a150','#e3f7ea'], bad:['#e11d48','#fde8ee'], warn:['#c26a05','#fdf2df'], info:['#0284c7','#e2f3fc']},
+  dark: {ok:['#4ade80','#12301f'], bad:['#fb7185','#3a1622'], warn:['#fbbf24','#382b10'], info:['#38bdf8','#102d44']}
+};
+const hexA = (hex,a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
+function rrect(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function fitText(ctx,s,max){ s=String(s); if(ctx.measureText(s).width<=max) return s; while(s.length>1 && ctx.measureText(s+'…').width>max) s=s.slice(0,-1); return s+'…'; }
+
+async function buildSummaryImages(c, o){
+  const FONT = 'Anuphan, "Noto Sans Thai", system-ui, sans-serif', S = 2;
+  const font = (w,s) => `${w} ${s}px ${FONT}`;
+  try{ await Promise.all([400,500,600,700].map(w=>document.fonts.load(`${w} 24px Anuphan`, 'กขคabc123'))); }catch(e){}
+  const T = IMG_THEMES[o.theme] || IMG_THEMES.violet, ST = IMG_ST[T.dark?'dark':'light'];
+  const tasks = c.tasks.filter(t=>o.tasks.includes(t.id));
+  const all = sortedStudents(c), stats = new Map(all.map(s=>[s.id, statOf(c,s)]));
+  let list = [...all];
+  if(o.sort==='score') list.sort((a,b)=> stats.get(b.id).total - stats.get(a.id).total || (+a.no||0)-(+b.no||0));
+  const max = maxTotal(c), n = list.length;
+  const gradeCol = g => g==null ? null : (+g>=3.5 ? ST.ok : +g>=2.5 ? ST.info : +g>=1.5 ? ST.warn : ST.bad);
+
+  const m = document.createElement('canvas').getContext('2d');
+  m.font = font(500,22);
+  const nameW = Math.min(460, Math.max(270, Math.ceil(Math.max(120, ...list.map(s=>m.measureText(s.name).width)))+48));
+  const cols = [{k:'no', label:'เลขที่', w:92}, {k:'name', label:'ชื่อ-สกุล', w:nameW, left:true}];
+  if(o.code) cols.push({k:'code', label:'รหัสนักเรียน', w:172});
+  m.font = font(600,20);
+  tasks.forEach(t=>cols.push({k:'task', t, label:t.name, sub:'เต็ม '+fmt(+t.max), w:Math.min(230, Math.max(126, Math.ceil(m.measureText(t.name).width)+36))}));
+  if(o.bonus) cols.push({k:'bonus', label:'เสริม', w:108});
+  if(o.summary){ cols.push({k:'total', label:'รวม', sub:'เต็ม '+fmt(max), w:138}, {k:'pct', label:'ร้อยละ', w:176}, {k:'grade', label:'เกรด', w:112}); }
+  if(o.att){ cols.push({k:'attp', label:'มาเรียน', w:150}, {k:'attc', label:'ขาด / ลา / สาย', w:196}); }
+  let x0 = 0; cols.forEach(cl=>{ cl.x = x0; x0 += cl.w; });
+  const tableW = x0, PAD = 56, W = Math.max(1180, tableW + PAD*2), TX = Math.round((W - tableW)/2);
+
+  // ค่าเฉลี่ย
+  const avg = f => n ? list.reduce((a,s)=>a+f(s),0)/n : null;
+  const days = new Set(); Object.keys(c.attendance||{}).forEach(d=>days.add(d));
+  const withAtt = list.filter(s=>stats.get(s.id).att.pct!=null);
+  const avgPct = avg(s=>stats.get(s.id).pct), pass = list.filter(s=>stats.get(s.id).max && +stats.get(s.id).grade>=1).length;
+  const msCount = list.filter(s=>stats.get(s.id).ms).length;
+  const dateStr = new Date().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+
+  const PER = 30, pages = Math.max(1, Math.ceil(n/PER));
+  const HB = 262, RH = 92, ROW = 60, FOOT = 66, NOTE = 84;
+  const out = [];
+  for(let p=0;p<pages;p++){
+    const rows = list.slice(p*PER,(p+1)*PER), last = p===pages-1;
+    const cardH = RH + rows.length*ROW + (last?FOOT:0);
+    const H = HB + cardH + NOTE + 20;
+    const cv = document.createElement('canvas'); cv.width = W*S; cv.height = Math.ceil(H*S);
+    const g = cv.getContext('2d'); g.scale(S,S); g.textBaseline='middle';
+    const text = (s,x,y,f,color,al='left',mw)=>{ g.font=f; g.fillStyle=color; g.textAlign=al; g.fillText(mw?fitText(g,s,mw):String(s),x,y); };
+
+    // พื้นหลัง
+    g.fillStyle = T.bg; g.fillRect(0,0,W,H);
+    [[.08,.1,T.head[0],.16],[.95,.05,T.head[2],.14],[.7,1,T.head[1],.12]].forEach(([fx,fy,col,a])=>{
+      const r = Math.max(W,H)*.5, gr = g.createRadialGradient(W*fx,H*fy,0,W*fx,H*fy,r);
+      gr.addColorStop(0,hexA(col,a)); gr.addColorStop(1,hexA(col,0)); g.fillStyle=gr; g.fillRect(0,0,W,H);
+    });
+
+    // แถบหัว
+    const hx=TX, hy=40, hw=tableW, hh=HB-60;
+    const hg = g.createLinearGradient(hx,hy,hx+hw,hy+hh); hg.addColorStop(0,T.head[0]); hg.addColorStop(.55,T.head[1]); hg.addColorStop(1,T.head[2]);
+    g.save(); rrect(g,hx,hy,hw,hh,30); g.fillStyle=hg; g.fill(); g.clip();
+    g.fillStyle='rgba(255,255,255,.10)'; g.beginPath(); g.arc(hx+hw-60,hy-30,170,0,7); g.fill();
+    g.fillStyle='rgba(255,255,255,.07)'; g.beginPath(); g.arc(hx+hw-250,hy+hh+40,130,0,7); g.fill();
+    g.restore();
+    text(c.name, hx+40, hy+58, font(700,46), '#fff', 'left', hw-420);
+    text(c.subject||'สรุปผลการเรียน', hx+40, hy+104, font(500,24), 'rgba(255,255,255,.88)', 'left', hw-420);
+    text('สรุปผลการเรียน', hx+hw-40, hy+54, font(600,22), 'rgba(255,255,255,.92)', 'right');
+    text(dateStr + (pages>1?`  ·  หน้า ${p+1}/${pages}`:''), hx+hw-40, hy+92, font(400,20), 'rgba(255,255,255,.8)', 'right');
+    const chips = [['นักเรียน', n+' คน']];
+    if(o.summary){ chips.push(['คะแนนเฉลี่ย', max?fmt(avgPct)+'%':'–'], ['ผ่าน (เกรด 1+)', pass+' คน']); }
+    if(o.att){ chips.push(['เวลาเรียนไม่ถึง 80%', msCount+' คน']); }
+    const cw = Math.min(250, (hw-80-(chips.length-1)*14)/chips.length);
+    chips.forEach((ch,i)=>{ const cx=hx+40+i*(cw+14), cy=hy+hh-86; rrect(g,cx,cy,cw,66,18); g.fillStyle='rgba(255,255,255,.18)'; g.fill();
+      text(ch[0], cx+18, cy+20, font(500,17), 'rgba(255,255,255,.85)'); text(ch[1], cx+18, cy+45, font(700,26), '#fff','left',cw-30); });
+
+    // การ์ดตาราง
+    const cy0 = HB;
+    g.save(); g.shadowColor = T.dark?'rgba(0,0,0,.5)':hexA(T.accent,.18); g.shadowBlur=36; g.shadowOffsetY=12;
+    rrect(g,TX,cy0,tableW,cardH,26); g.fillStyle=T.card; g.fill(); g.restore();
+    g.save(); rrect(g,TX,cy0,tableW,cardH,26); g.clip();
+    g.fillStyle=T.head2; g.fillRect(TX,cy0,tableW,RH);
+    cols.forEach(cl=>{
+      const cx = TX+cl.x, mid = cx+cl.w/2;
+      const al = cl.left?'left':'center', tx = cl.left? cx+24 : mid;
+      if(cl.k==='task') g.beginPath(), (g.fillStyle = (CATS[cl.t.cat]?.color||'#999')), (rrect(g,mid-34,cy0+18,68,6,3), g.fill());
+      const lab = cl.sub ? cy0+RH/2-10 : cy0+RH/2;
+      text(cl.label, tx, lab+ (cl.k==='task'?4:0), font(600,20), T.ink, al, cl.w-20);
+      if(cl.sub) text(cl.sub, tx, lab+26+(cl.k==='task'?4:0), font(400,17), T.muted, al);
+    });
+    g.fillStyle=T.ink; g.fillRect(TX,cy0+RH-2,tableW,2);
+
+    rows.forEach((s,i)=>{
+      const y = cy0+RH+i*ROW, mid = y+ROW/2, sx = stats.get(s.id);
+      if(i%2===1){ g.fillStyle=T.zebra; g.fillRect(TX,y,tableW,ROW); }
+      g.fillStyle=T.line; g.fillRect(TX+20,y+ROW-1,tableW-40,1);
+      cols.forEach(cl=>{
+        const cx=TX+cl.x, cm=cx+cl.w/2;
+        if(cl.k==='no') text(s.no, cm, mid, font(500,21), T.muted, 'center');
+        else if(cl.k==='name') text(s.name, cx+24, mid, font(500,22), T.ink, 'left', cl.w-36);
+        else if(cl.k==='code') text(s.code||'–', cm, mid, font(500,20), T.muted, 'center');
+        else if(cl.k==='task'){
+          const v = c.scores[cl.t.id]?.[s.id], has = v!=null && v!=='', r = has && +cl.t.max ? Math.min(1,+v/+cl.t.max) : 0;
+          if(has){ rrect(g,cx+10,y+8,cl.w-20,ROW-16,12); g.fillStyle=hexA(T.accent, .05+.2*r); g.fill(); }
+          text(has?fmt(+v):'–', cm, mid, font(has?600:400,23), !has?T.muted:(r<.5?ST.bad[0]:T.ink), 'center');
+        }
+        else if(cl.k==='bonus'){ const b=sx.bonus; text(b?(b>0?'+':'')+fmt(b):'–', cm, mid, font(b?700:400,21), b>0?ST.ok[0]:b<0?ST.bad[0]:T.muted, 'center'); }
+        else if(cl.k==='total') text(fmt(sx.total), cm, mid, font(700,24), T.ink, 'center');
+        else if(cl.k==='pct'){
+          if(!sx.max){ text('–', cm, mid, font(400,21), T.muted,'center'); return; }
+          text(fmt(sx.pct)+'%', cm, mid-9, font(600,20), T.ink, 'center');
+          const bw=cl.w-56, bx=cx+28, by=mid+11; rrect(g,bx,by,bw,8,4); g.fillStyle=T.line; g.fill();
+          const fg=g.createLinearGradient(bx,0,bx+bw,0); fg.addColorStop(0,T.head[0]); fg.addColorStop(1,T.head[2]);
+          rrect(g,bx,by,Math.max(8,bw*sx.pct/100),8,4); g.fillStyle=fg; g.fill();
+        }
+        else if(cl.k==='grade'){
+          const col = gradeCol(sx.grade); if(!col){ text('–', cm, mid, font(400,21), T.muted,'center'); return; }
+          rrect(g,cm-31,mid-19,62,38,12); g.fillStyle=col[1]; g.fill(); text(sx.grade, cm, mid+1, font(700,23), col[0], 'center');
+        }
+        else if(cl.k==='attp'){
+          if(sx.att.pct==null){ text('–', cm, mid, font(400,21), T.muted,'center'); return; }
+          const col = sx.att.pct<80?ST.bad:ST.ok, label=fmt(sx.att.pct)+'%';
+          g.font=font(700,20); const pw=g.measureText(label).width+34; rrect(g,cm-pw/2,mid-18,pw,36,18); g.fillStyle=col[1]; g.fill(); text(label, cm, mid+1, font(700,20), col[0], 'center');
+        }
+        else if(cl.k==='attc'){
+          if(sx.att.days===0){ text('–', cm, mid, font(400,21), T.muted,'center'); return; }
+          const parts=[[sx.att.A,ST.bad[0]],[sx.att.L,ST.info[0]],[sx.att.S,ST.warn[0]]]; g.font=font(600,21);
+          const ws=parts.map(q=>g.measureText(String(q[0])).width), sep=g.measureText(' / ').width, tot=ws.reduce((a,b)=>a+b,0)+sep*2;
+          let px=cm-tot/2; parts.forEach((q,j)=>{ text(q[0], px, mid, font(600,21), q[0]?q[1]:T.muted, 'left'); px+=ws[j]; if(j<2){ text(' / ', px, mid, font(400,21), T.muted,'left'); px+=sep; } });
+        }
+      });
+    });
+
+    if(last){
+      const y = cy0+RH+rows.length*ROW; g.fillStyle=T.head2; g.fillRect(TX,y,tableW,FOOT); g.fillStyle=T.ink; g.fillRect(TX,y,tableW,2);
+      cols.forEach(cl=>{
+        const cx=TX+cl.x, cm=cx+cl.w/2, mid=y+FOOT/2;
+        if(cl.k==='name') text('เฉลี่ยทั้งห้อง', cx+24, mid, font(700,21), T.ink, 'left');
+        else if(cl.k==='task'){ const vs=list.map(s=>c.scores[cl.t.id]?.[s.id]).filter(v=>v!=null&&v!=='').map(Number); text(vs.length?fmt(vs.reduce((a,b)=>a+b,0)/vs.length):'–', cm, mid, font(700,22), T.ink,'center'); }
+        else if(cl.k==='bonus') text(fmt(avg(s=>stats.get(s.id).bonus)), cm, mid, font(600,20), T.muted,'center');
+        else if(cl.k==='total') text(fmt(avg(s=>stats.get(s.id).total)), cm, mid, font(700,22), T.ink,'center');
+        else if(cl.k==='pct') text(max?fmt(avgPct)+'%':'–', cm, mid, font(700,22), T.accent,'center');
+        else if(cl.k==='attp') text(withAtt.length?fmt(withAtt.reduce((a,s)=>a+stats.get(s.id).att.pct,0)/withAtt.length)+'%':'–', cm, mid, font(700,21), T.ink,'center');
+      });
+    }
+    g.restore();
+
+    // ท้ายรูป
+    const ny = cy0+cardH+40;
+    const parts = []; if(tasks.length<c.tasks.length) parts.push('คะแนนรวม/ร้อยละ/เกรด คำนวณจากทุกงาน (แสดงเฉพาะงานที่เลือก)');
+    parts.push('เกรด 4 = 80%+  ·  มาเรียนต่ำกว่า 80% = เสี่ยง มส  ·  ตัวเลขสีแดง = ต่ำกว่าครึ่งของคะแนนเต็ม');
+    text(parts.join('   ·   '), TX, ny, font(400,17), T.muted, 'left', tableW-300);
+    text('สมุดคะแนนรายห้อง', TX+tableW, ny, font(600,18), T.accent, 'right');
+    out.push(cv);
+  }
+  return out;
+}
+
+function imageExportDialog(){
+  if(!S.classes.length){ toast('ยังไม่มีห้องเรียน'); return; }
+  let cls = C(), pages = [], seq = 0, theme = localStorage.getItem('scorebook.imgtheme') || 'violet';
+  if(!IMG_THEMES[theme]) theme = 'violet';
+  const html = () => `<h2>ส่งออกสรุปเป็นรูปภาพ</h2>
+    <div class="field"><label for="im_cls">ห้องเรียน</label><select class="ctl" id="im_cls">${S.classes.map(k=>`<option value="${k.id}" ${k.id===cls.id?'selected':''}>${esc(k.name)}${k.subject?' · '+esc(k.subject):''}</option>`).join('')}</select></div>
+    <div class="field"><label>ธีมสี</label><div class="im-sw">${Object.entries(IMG_THEMES).map(([k,v])=>`<button type="button" class="im-swb" data-theme="${k}" aria-pressed="${k===theme}" title="${v.name}"><i style="background:linear-gradient(135deg,${v.head[0]},${v.head[1]} 55%,${v.head[2]})"></i><span>${v.name}</span></button>`).join('')}</div></div>
+    <div class="field"><label>แสดงในรูป</label><div class="im-chk">
+      <label><input type="checkbox" id="im_sum" checked> คะแนนรวม · ร้อยละ · เกรด</label>
+      <label><input type="checkbox" id="im_att" checked> เวลาเรียน (มา% · ขาด/ลา/สาย)</label>
+      <label><input type="checkbox" id="im_bonus" checked> คะแนนเสริม</label>
+      <label><input type="checkbox" id="im_code" checked> รหัสนักเรียน</label></div></div>
+    <div class="field"><label>งานที่แสดง <span class="hint">(<a href="#" id="im_all">ทั้งหมด</a> · <a href="#" id="im_none">ไม่เลือก</a>)</span></label>
+      <div class="im-chk" id="im_tasks">${cls.tasks.length?cls.tasks.map(t=>`<label><input type="checkbox" data-tk="${t.id}" checked> <i class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></i>${esc(t.name)} <span class="hint">เต็ม ${fmt(+t.max)}</span></label>`).join(''):'<span class="hint">ยังไม่มีงาน</span>'}</div></div>
+    <div class="field"><label for="im_sort">เรียงลำดับ</label><select class="ctl" id="im_sort"><option value="no">ตามเลขที่</option><option value="score">คะแนนมาก → น้อย</option></select></div>
+    <div class="im-prev" id="im_prev"><span class="hint">กำลังสร้างตัวอย่าง…</span></div>
+    <p class="hint" id="im_info" style="margin:6px 0 0"></p>
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>
+      <button type="button" class="btn" id="im_share" hidden>แชร์</button>
+      <button type="button" class="btn pri" id="im_dl">ดาวน์โหลดรูป (PNG)</button></div>`;
+  const opts = () => ({theme, sort:document.getElementById('im_sort').value, summary:document.getElementById('im_sum').checked, att:document.getElementById('im_att').checked,
+    bonus:document.getElementById('im_bonus').checked, code:document.getElementById('im_code').checked,
+    tasks:[...document.querySelectorAll('#im_tasks [data-tk]:checked')].map(x=>x.dataset.tk)});
+  const refresh = async () => {
+    const my = ++seq, prev = document.getElementById('im_prev'); if(!prev) return;
+    try{
+      const pg = await buildSummaryImages(cls, opts()); if(my!==seq) return;
+      pages = pg; prev.innerHTML = ''; const cv = pg[0]; cv.style.cssText = 'width:100%;height:auto;display:block;border-radius:12px'; prev.appendChild(cv);
+      document.getElementById('im_info').textContent = `ขนาด ${cv.width}×${cv.height}px` + (pg.length>1 ? ` · ${pg.length} รูป (รูปละ 30 คน) · แสดงตัวอย่างรูปแรก` : '');
+    }catch(e){ console.error(e); prev.innerHTML = '<span class="hint">สร้างรูปไม่สำเร็จ</span>'; }
+  };
+  const fileName = i => `${cls.name.replace(/[\\/:*?"<>|]/g,'-')}-สรุป${pages.length>1?'-'+(i+1):''}.png`;
+  const blobs = () => Promise.all(pages.map(cv=>new Promise(r=>cv.toBlob(r,'image/png'))));
+  openDialog(html(), ()=>false, true); dlg.classList.add('xwide');
+  const root = dlgForm;
+  root.onchange = e=>{
+    if(e.target.id==='im_cls'){ cls = S.classes.find(k=>k.id===e.target.value) || cls; root.querySelector('#im_tasks').innerHTML = cls.tasks.length?cls.tasks.map(t=>`<label><input type="checkbox" data-tk="${t.id}" checked> <i class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></i>${esc(t.name)} <span class="hint">เต็ม ${fmt(+t.max)}</span></label>`).join(''):'<span class="hint">ยังไม่มีงาน</span>'; }
+    refresh();
+  };
+  root.onclick = async e=>{
+    const th = e.target.closest('[data-theme]'); if(th){ theme = th.dataset.theme; try{ localStorage.setItem('scorebook.imgtheme', theme); }catch(_){}
+      root.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed', b===th)); refresh(); return; }
+    if(e.target.id==='im_all' || e.target.id==='im_none'){ e.preventDefault(); root.querySelectorAll('#im_tasks [data-tk]').forEach(x=>x.checked = e.target.id==='im_all'); refresh(); return; }
+    if(e.target.id==='im_dl'){ const b = e.target; b.disabled = true; const bl = await blobs(); for(let i=0;i<bl.length;i++){ await download(fileName(i), bl[i], 'image/png'); await new Promise(r=>setTimeout(r,350)); } b.disabled = false; toast(`บันทึกรูปแล้ว ${bl.length} ไฟล์`); return; }
+    if(e.target.id==='im_share'){ const bl = await blobs(); const files = bl.map((b,i)=>new File([b], fileName(i), {type:'image/png'}));
+      try{ await navigator.share({files, title:cls.name}); }catch(err){ if(err?.name!=='AbortError') toast('แชร์ไม่สำเร็จ ลองดาวน์โหลดแทน'); } }
+  };
+  if(navigator.canShare && navigator.canShare({files:[new File([''],'a.png',{type:'image/png'})]})) root.querySelector('#im_share').hidden = false;
+  refresh();
+}
+
 function exportCSV(){
   const c = C(); if(!c) return;
   const q = v => { const s=String(v??''); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
@@ -1323,6 +1550,7 @@ document.addEventListener('click', e=>{
     case 'editClass': if(c) classDialog(true); break;
     case 'demo': demo(); animateView(); break;
     case 'random': randomDialog(); break;
+    case 'img': closeMenu(); imageExportDialog(); break;
     case 'xlsx': exportXLSX(); break;
     case 'connect': connectDialog(); break;
     case 'studentPage': closeMenu(); studentPageDialog(); break;
