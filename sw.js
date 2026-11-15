@@ -1,5 +1,5 @@
 // แคชให้เปิดเร็วและใช้ออฟไลน์ได้: หน้าเว็บ = ลองเน็ตก่อน (ได้เวอร์ชันใหม่ทันที) ไม่ได้ค่อยใช้ที่เก็บไว้ ; ฟอนต์/ไลบรารี = ใช้ที่เก็บไว้ก่อน
-const CACHE = 'scorebook-v1';
+const CACHE = 'scorebook-v2';
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', 'icon.svg', 'manifest.webmanifest']).catch(()=>{}))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
