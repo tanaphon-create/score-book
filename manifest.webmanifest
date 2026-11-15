@@ -1,0 +1,12 @@
+{
+  "name": "สมุดคะแนนรายห้อง",
+  "short_name": "สมุดคะแนน",
+  "description": "บันทึกคะแนน เช็คชื่อ และคะแนนเสริมรายห้องเรียน",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f3fb",
+  "theme_color": "#5b4bff",
+  "lang": "th",
+  "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}

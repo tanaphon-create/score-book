@@ -2,7 +2,13 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b4bff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>สมุดคะแนนรายห้อง</title>
 <meta name="description" content="บันทึกคะแนน เช็คชื่อ และคะแนนเสริม รายห้องเรียน ใช้งานได้ทันทีแม้ออฟไลน์">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -77,8 +83,9 @@ textarea.ctl{width:100%;min-height:140px;resize:vertical}
 /* ---------- tabs ---------- */
 nav.tabs{max-width:1400px;margin:auto;padding:2px 16px 10px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
-nav.tabs button{border:1px solid transparent;background:none;padding:7px 16px;border-radius:99px;color:var(--muted);font-weight:600;white-space:nowrap;transition:color .2s,background .25s,box-shadow .25s,transform .2s var(--ease)}
+nav.tabs button{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;background:none;padding:7px 16px;border-radius:99px;color:var(--muted);font-weight:600;white-space:nowrap;transition:color .2s,background .25s,box-shadow .25s,transform .2s var(--ease)}
 nav.tabs button:hover{color:var(--text);background:var(--surface-2)}
+nav.tabs button b{font-weight:400}
 nav.tabs button[aria-selected="true"]{color:#fff;background:var(--grad);box-shadow:var(--glow);transform:translateY(-1px)}
 main{max-width:1400px;margin:auto;padding:18px 16px 70px}
 
@@ -280,14 +287,47 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
   .tbl-wrap{max-height:none}
   .log{max-height:360px}
 }
-@media (max-width:560px){
+@media (max-width:700px){
+  /* โทรศัพท์: แถบบนแถวเดียว + เมนูแท็บล่างแบบแอป + ตัดเอฟเฟกต์หนัก ๆ ให้ลื่น */
+  header.top{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--surface);padding-top:env(safe-area-inset-top)}
+  .top-in{flex-wrap:nowrap;gap:8px;padding:8px 12px}
+  .logo{margin:0}.logo span{display:none}.logo i{width:34px;height:34px;border-radius:11px;font-size:16px}
+  .class-pick{flex:1;min-width:0}
+  .class-pick select{flex:1;min-width:0;text-overflow:ellipsis}
+  .class-pick .btn{display:none}
+  .saved{flex:none;width:40px;height:40px;justify-content:center;font-size:0;gap:0;padding:0;border-radius:12px}
+  .saved i{width:11px;height:11px}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:none;margin:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom));gap:2px;overflow:visible;
+    background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 24px -10px rgba(20,24,60,.25)}
+  nav.tabs button{flex:1;min-width:0;flex-direction:column;gap:1px;padding:6px 2px 5px;border-radius:14px;font-size:11.5px;line-height:1.25}
+  nav.tabs button b{font-size:19px;line-height:1.1;transition:transform .25s var(--ease)}
+  nav.tabs button[aria-selected="true"]{background:var(--brand-soft);color:var(--brand);box-shadow:none;transform:none}
+  nav.tabs button[aria-selected="true"] b{transform:translateY(-2px) scale(1.12)}
+  main{padding:12px 12px calc(92px + env(safe-area-inset-bottom))}
+  #toast{bottom:calc(86px + env(safe-area-inset-bottom))}
+  body::before{animation:none}
+  .card{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--surface)}
+  .toolbar{gap:8px;margin-bottom:10px}
+  .toolbar>.hint{display:none}
+  .search{max-width:none;min-width:0;flex:1 1 100%}
+  .btn{min-height:44px}.btn.sm{min-height:36px}
+  .cell{font-size:16px;height:44px;min-width:56px}
+  .grid td.num{padding:8px 6px}
+  .task-h{min-width:62px}
   .logo span{display:none}
-  .grid .c-name{min-width:130px;max-width:150px;padding:0 8px;left:40px}
-  .grid .c-no{width:40px;min-width:40px}
-  .seg button{min-width:42px;padding:6px 8px}
-  .saved{max-width:44px;overflow:hidden;white-space:nowrap;padding:6px 16px}
+  .grid .c-name{min-width:122px;max-width:140px;padding:0 8px;left:36px;font-size:14px}
+  .grid .c-no{width:36px;min-width:36px;padding:0 2px}
+  .seg button{min-width:42px;padding:6px 8px;min-height:42px}
   .mini-stats{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat b{font-size:22px}
+  .att-stats{grid-template-columns:repeat(4,1fr);gap:6px}
+  .att-stats>.stat:first-child{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .att-stats .stat{padding:8px 10px}.att-stats .stat small{font-size:12.5px}
+  .att-stats .stat b{font-size:20px}
   .rand-name{font-size:23px}
+  .tbl-wrap{border-radius:14px}
+  dialog{max-width:calc(100vw - 20px)}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media print{
@@ -325,11 +365,11 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs" aria-label="ส่วนของสมุดคะแนน">
-    <button role="tab" data-tab="scores">📝 คะแนน</button>
-    <button role="tab" data-tab="att">📅 เช็คชื่อ</button>
-    <button role="tab" data-tab="bonus">⭐ คะแนนเสริม</button>
-    <button role="tab" data-tab="sum">📊 สรุปผล</button>
-    <button role="tab" data-tab="stu">👥 นักเรียน</button>
+    <button role="tab" data-tab="scores"><b aria-hidden="true">📝</b><span>คะแนน</span></button>
+    <button role="tab" data-tab="att"><b aria-hidden="true">📅</b><span>เช็คชื่อ</span></button>
+    <button role="tab" data-tab="bonus"><b aria-hidden="true">⭐</b><span>คะแนนเสริม</span></button>
+    <button role="tab" data-tab="sum"><b aria-hidden="true">📊</b><span>สรุปผล</span></button>
+    <button role="tab" data-tab="stu"><b aria-hidden="true">👥</b><span>นักเรียน</span></button>
   </nav>
 </header>
 
@@ -697,7 +737,7 @@ function viewAtt(v, c){
     <button class="btn pri" data-act="allPresent">✓ มาทั้งหมด</button>
     ${c.attendance[attDate]?'<button class="btn danger" data-act="clearDay">ล้างวันนี้</button>':''}
   </div>
-  <div class="stats">
+  <div class="stats att-stats">
     <div class="card stat"><small>${fmtDate(attDate,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</small><b>${c.students.length-none}<span class="muted" style="font-size:15px"> / ${c.students.length} เช็คแล้ว</span></b></div>
     <div class="card stat"><small>มา</small><b style="color:var(--ok)">${cnt.P}</b></div>
     <div class="card stat"><small>ขาด</small><b style="color:var(--bad)">${cnt.A}</b></div>
@@ -1347,6 +1387,11 @@ if(API) pullFromSheet(); else setStatus('local');
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && API) pullFromSheet(); });
 window.addEventListener('pagehide', ()=>{ if(API && pending().any && navigator.sendBeacon){ const p=pending(); navigator.sendBeacon(API.url, JSON.stringify({action:'save', pin:API.pin, classes:p.changed, deleted:p.deleted, meta:metaObj()})); } });
 window.addEventListener('beforeunload', ()=>{ clearTimeout(saveTimer); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} });
+</script>
+<script>
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 </script>
 </body>
 </html>
