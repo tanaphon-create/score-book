@@ -256,6 +256,30 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px
 /* ---------- dialog / menu / toast ---------- */
 dialog{border:1px solid var(--line);border-radius:22px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 30px 80px -10px rgba(0,0,20,.45);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
 dialog.wide{width:min(560px,calc(100vw - 32px))}
+/* กลุ่ม */
+.nm-row{display:flex;align-items:center;gap:6px;min-width:0}
+.nm-row .name-btn{min-width:0;flex:1}
+.gbadge{flex:none;font-size:11.5px;font-weight:700;line-height:1;padding:3px 6px;border-radius:6px;color:var(--gc);background:color-mix(in srgb,var(--gc) 16%,var(--surface))}
+.gcell{background:color-mix(in srgb,var(--gc) 9%,var(--surface))!important}
+.field-chk{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-size:14px}
+.field-chk input{width:18px;height:18px;margin-top:3px;accent-color:var(--brand)}
+.grp-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
+.grp-rand{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grp-rand input{width:80px}
+.grp-acts{display:flex;gap:8px}
+.grp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.grp-card{border:1px solid var(--line);border-top:4px solid var(--gc);border-radius:14px;padding:10px;background:var(--surface)}
+.grp-h{display:flex;gap:6px;align-items:center}
+.grp-h .ctl{flex:1;min-width:0;font-weight:600;min-height:36px;padding:4px 10px}
+.grp-m{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.mchip{border:0;border-radius:99px;padding:3px 10px;font-size:13px;background:color-mix(in srgb,var(--gc) 14%,var(--surface));color:var(--text);cursor:pointer}
+.mchip:hover{background:var(--bad-soft);color:var(--bad)}
+.grp-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 14px}
+.grp-row{display:grid;grid-template-columns:34px 1fr 140px;gap:8px;align-items:center}
+.grp-row .no{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.grp-row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grp-row select{min-height:36px;padding:4px 8px}
+.grp-row select[data-in]{border-color:var(--gc);background:color-mix(in srgb,var(--gc) 10%,var(--surface))}
 dialog.xwide{width:min(940px,calc(100vw - 24px))}
 .im-sw{display:flex;gap:8px;flex-wrap:wrap}
 .im-swb{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-weight:600;font-size:13.5px}
@@ -358,6 +382,7 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <button data-act="newClass" role="menuitem">＋ เพิ่มห้องเรียน</button>
         <button data-act="editClass" role="menuitem">✎ แก้ไขชื่อห้อง/วิชา</button>
         <hr>
+        <button data-act="groups" role="menuitem">👥 จัดกลุ่มนักเรียน</button>
         <button data-act="random" role="menuitem">🎲 สุ่มชื่อนักเรียน</button>
         <hr>
         <button data-act="img" role="menuitem">🖼 ส่งออกสรุปเป็นรูปภาพ (PNG)</button>
@@ -656,6 +681,7 @@ function viewScores(v, c){
   <div class="toolbar">
     ${searchBox()}
     <span class="hint grow"><kbd>Enter</kbd> ลงคนถัดไป · ลูกศรเลื่อนช่อง · วางคะแนนทั้งคอลัมน์จาก Excel ได้</span>
+    <button class="btn" data-act="groups">👥 จัดกลุ่ม${(c.groups||[]).length?` (${c.groups.length})`:''}</button>
     <button class="btn pri" data-act="addTask">＋ เพิ่มงาน</button>
   </div>
   ${!c.tasks.length ? `<div class="card empty"><div class="big" aria-hidden="true">📝</div><h2>ยังไม่มีงาน</h2><p>เพิ่มงาน การบ้าน หรือการสอบ พร้อมคะแนนเต็ม แล้วกรอกคะแนนได้ทันที</p><div class="row"><button class="btn pri" data-act="addTask">＋ เพิ่มงานแรก</button></div></div>` : `
@@ -663,14 +689,14 @@ function viewScores(v, c){
   <table class="grid" id="scoreGrid">
     <thead><tr>
       <th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
-      ${c.tasks.map(t=>`<th><button class="task-h" data-task="${t.id}" title="แก้ไขงาน"><b><span class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></span>${esc(t.name)}</b><small>เต็ม ${fmt(+t.max)}</small></button></th>`).join('')}
+      ${c.tasks.map(t=>`<th><button class="task-h" data-task="${t.id}" title="แก้ไขงาน"><b><span class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></span>${t.group?'👥 ':''}${esc(t.name)}</b><small>เต็ม ${fmt(+t.max)}${t.group?' · กลุ่ม':''}</small></button></th>`).join('')}
       <th>เสริม</th><th>รวม<br><small>/${fmt(max)}</small></th><th>%</th><th>เกรด</th>
     </tr></thead>
     <tbody>
     ${list.map((s,r)=>{ const st=statOf(c,s); return `<tr data-sid="${s.id}">
-      <td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
-      ${c.tasks.map((t,ci)=>{ const val=c.scores[t.id]?.[s.id]; const bad = val!=null && val!=='' && +val>+t.max;
-        return `<td><input class="cell${bad?' err':''}" inputmode="decimal" autocomplete="off" aria-label="${esc(s.name)} ${esc(t.name)}" data-r="${r}" data-c="${ci}" data-t="${t.id}" value="${val??''}" placeholder="·"></td>`}).join('')}
+      <td class="c-no">${esc(s.no)}</td><td class="c-name"><div class="nm-row">${groupBadge(c,s.id)}${nameBtn(s)}</div></td>
+      ${c.tasks.map((t,ci)=>{ const val=c.scores[t.id]?.[s.id]; const bad = val!=null && val!=='' && +val>+t.max; const gg = t.group ? groupOf(c,s.id) : null;
+        return `<td${gg?` class="gcell" style="--gc:${gColor(c,gg)}" title="คะแนนกลุ่ม: ${esc(gg.name)}"`:''}><input class="cell${bad?' err':''}" inputmode="decimal" autocomplete="off" aria-label="${esc(s.name)} ${esc(t.name)}" data-r="${r}" data-c="${ci}" data-t="${t.id}" value="${val??''}" placeholder="·"></td>`}).join('')}
       <td class="num b-bonus">${st.bonus? '<span class="plus">+'+fmt(st.bonus)+'</span>':'<span class="muted">–</span>'}</td>
       <td class="num total b-total">${fmt(st.total)}</td>
       <td class="num b-pct">${fmt(st.pct)}</td>
@@ -690,26 +716,108 @@ function classAvg(c,key){
   if(!c.students.length) return null;
   return c.students.reduce((a,s)=>a+statOf(c,s)[key],0)/c.students.length;
 }
-function onScoreInput(inp){
-  const c = C(); const tid = inp.dataset.t; const sid = inp.closest('tr').dataset.sid;
-  const t = c.tasks.find(x=>x.id===tid);
-  let raw = inp.value.trim().replace(',', '.');
-  if(raw===''){ if(c.scores[tid]) delete c.scores[tid][sid]; inp.classList.remove('err'); }
-  else{
-    const n = Number(raw);
-    if(isNaN(n) || n<0){ inp.classList.add('err'); return; }
-    inp.classList.toggle('err', n > +t.max);
-    (c.scores[tid] ||= {})[sid] = n;
-  }
-  const tr = inp.closest('tr'); const s = c.students.find(x=>x.id===sid); const st = statOf(c,s);
+/* ---------- กลุ่ม ---------- */
+const GCOL = ['#5b4bff','#0ea5e9','#16a34a','#f59e0b','#ec4899','#14b8a6','#ef4444','#8b5cf6','#84cc16','#f97316'];
+const groupOf = (c,sid) => (c.groups||[]).find(g=>g.members.includes(sid));
+const gColor = (c,g) => GCOL[Math.max(0,c.groups.indexOf(g)) % GCOL.length];
+function groupBadge(c,sid){
+  const g = groupOf(c,sid); if(!g) return '';
+  const m = /^กลุ่ม\s*(\S+)$/.exec(g.name.trim()); const lab = m ? 'ก.'+m[1] : g.name.slice(0,8);
+  return `<span class="gbadge" style="--gc:${gColor(c,g)}" title="${esc(g.name)}">${esc(lab)}</span>`;
+}
+function setScore(c, tid, sid, n){ const sc = (c.scores[tid] ||= {}); if(n==null) delete sc[sid]; else sc[sid] = n; }
+function refreshRow(c, tr){
+  const s = c.students.find(x=>x.id===tr.dataset.sid); if(!s) return; const st = statOf(c,s);
   const bt = tr.querySelector('.b-total'); bt.textContent = fmt(st.total); bt.classList.remove('bump'); void bt.offsetWidth; bt.classList.add('bump');
   tr.querySelector('.b-pct').textContent = fmt(st.pct);
   tr.querySelector('.b-grade').innerHTML = gradeBadge(st.grade);
+}
+function onScoreInput(inp){
+  const c = C(); const tid = inp.dataset.t; const sid = inp.closest('tr').dataset.sid;
+  const t = c.tasks.find(x=>x.id===tid);
+  let raw = inp.value.trim().replace(',', '.'), val = null;
+  if(raw===''){ inp.classList.remove('err'); }
+  else{
+    const n = Number(raw);
+    if(isNaN(n) || n<0){ inp.classList.add('err'); return; }
+    inp.classList.toggle('err', n > +t.max); val = n;
+  }
+  setScore(c, tid, sid, val);
+  const rows = [inp.closest('tr')];
+  const g = t.group ? groupOf(c,sid) : null;
+  if(g) g.members.forEach(m=>{
+    if(m===sid) return; setScore(c, tid, m, val);
+    const tr = document.querySelector(`#scoreGrid tr[data-sid="${m}"]`); if(!tr) return;
+    const el = tr.querySelector(`.cell[data-t="${tid}"]`); if(el){ el.value = val==null?'':val; el.classList.toggle('err', val!=null && val>+t.max); }
+    rows.push(tr);
+  });
+  rows.forEach(tr=>refreshRow(c,tr));
   const avg = document.querySelector(`[data-avg="${tid}"]`); if(avg) avg.textContent = fmt(taskAvg(c,t));
   document.getElementById('avgTotal').textContent = fmt(classAvg(c,'total'));
   document.getElementById('avgPct').textContent = fmt(classAvg(c,'pct'));
   save();
 }
+function joinGroup(c, sid, gid){
+  (c.groups||[]).forEach(g=>{ g.members = g.members.filter(x=>x!==sid); });
+  const g = (c.groups||[]).find(x=>x.id===gid); if(!g) return;
+  g.members.push(sid);
+  // งานกลุ่ม: คนที่เข้ามาใหม่ได้คะแนนเท่ากับเพื่อนในกลุ่มทันที
+  c.tasks.filter(t=>t.group).forEach(t=>{
+    const mate = g.members.find(m=>m!==sid && c.scores[t.id]?.[m]!=null && c.scores[t.id][m]!=='');
+    if(mate) setScore(c, t.id, sid, c.scores[t.id][mate]);
+  });
+}
+function groupsDialog(){
+  const c = C(); if(!c) return; c.groups ||= [];
+  const paint = () => {
+    const sts = sortedStudents(c), free = sts.filter(x=>!groupOf(c,x.id)).length, byId = new Map(c.students.map(x=>[x.id,x]));
+    const top = dlg.scrollTop;
+    dlgForm.innerHTML = `<h2>จัดกลุ่มนักเรียน</h2>
+      <p class="hint" style="margin-top:0">ครูเลือกเองว่าใครอยู่กลุ่มไหน หรือกดสุ่ม · งานที่ติ๊ก “คะแนนกลุ่ม” จะให้คะแนนเท่ากันทั้งกลุ่ม (ใส่ช่องของใครก็ได้ในกลุ่ม)</p>
+      <div class="grp-bar">
+        <div class="grp-rand"><label class="sr" for="g_mode">แบบการสุ่ม</label>
+          <select class="ctl" id="g_mode"><option value="k">แบ่งเป็น (จำนวนกลุ่ม)</option><option value="m">กลุ่มละ (จำนวนคน)</option></select>
+          <label class="sr" for="g_n">จำนวน</label><input class="ctl" id="g_n" type="number" min="1" max="${sts.length}" value="${Math.max(2,Math.round(sts.length/4))}">
+          <button type="button" class="btn pri" id="g_rand">🎲 สุ่มแบ่งกลุ่ม</button></div>
+        <div class="grp-acts"><button type="button" class="btn sm" id="g_add">＋ เพิ่มกลุ่ม</button>
+          <button type="button" class="btn sm danger" id="g_clear" ${c.groups.length?'':'disabled'}>ล้างกลุ่มทั้งหมด</button></div></div>
+      <div class="grp-cards">${c.groups.map(g=>`<div class="grp-card" style="--gc:${gColor(c,g)}">
+        <div class="grp-h"><input class="ctl" data-gname="${g.id}" value="${esc(g.name)}" maxlength="30" aria-label="ชื่อกลุ่ม"><span class="chip">${g.members.length} คน</span>
+          <button type="button" class="btn sm ghost danger" data-delg="${g.id}" aria-label="ลบกลุ่ม ${esc(g.name)}">✕</button></div>
+        <div class="grp-m">${g.members.length ? g.members.map(m=>byId.get(m)).filter(Boolean).sort((a,b)=>(+a.no||9999)-(+b.no||9999)).map(x=>`<button type="button" class="mchip" data-rm="${x.id}" title="เอาออกจากกลุ่ม">${esc(x.no)}. ${esc(x.name)} ✕</button>`).join('') : '<span class="hint">ยังไม่มีสมาชิก — เลือกกลุ่มให้นักเรียนด้านล่าง</span>'}</div></div>`).join('') || '<p class="hint">ยังไม่มีกลุ่ม กด “สุ่มแบ่งกลุ่ม” หรือ “เพิ่มกลุ่ม”</p>'}</div>
+      <h3 style="margin-top:14px">ใครอยู่กลุ่มไหน <span class="hint">· ยังไม่มีกลุ่ม ${free} คน</span></h3>
+      <div class="grp-list">${sts.map(x=>{ const g=groupOf(c,x.id); return `<div class="grp-row"><span class="no">${esc(x.no)}</span><span class="nm">${esc(x.name)}</span>
+        <select class="ctl" data-assign="${x.id}" ${g?`style="--gc:${gColor(c,g)}" data-in="1"`:''} aria-label="กลุ่มของ ${esc(x.name)}"><option value="">— ไม่มีกลุ่ม —</option>${c.groups.map(h=>`<option value="${h.id}" ${g&&g.id===h.id?'selected':''}>${esc(h.name)}</option>`).join('')}</select></div>`; }).join('')}</div>
+      <div class="dlg-foot"><button type="button" class="btn pri" data-close>เสร็จ</button></div>`;
+    dlg.scrollTop = top;
+  };
+  const changed = () => { save(); render(); paint(); };
+  const snap = () => JSON.stringify(c.groups);
+  const undoTo = js => () => { c.groups = JSON.parse(js); save(); render(); if(dlg.open) paint(); };
+  openDialog('', ()=>false, true); dlg.classList.add('xwide'); paint();
+  dlgForm.onchange = e => {
+    const a = e.target.closest('[data-assign]'); if(a){ joinGroup(c, a.dataset.assign, a.value); changed(); return; }
+    const n = e.target.closest('[data-gname]'); if(n){ const g=c.groups.find(x=>x.id===n.dataset.gname); if(g){ g.name = n.value.trim() || g.name; changed(); } }
+  };
+  dlgForm.onclick = e => {
+    if(e.target.closest('[data-close]')){ return; }
+    const rm = e.target.closest('[data-rm]'); if(rm){ c.groups.forEach(g=>{ g.members = g.members.filter(x=>x!==rm.dataset.rm); }); changed(); return; }
+    const dg = e.target.closest('[data-delg]'); if(dg){ const before=snap(); c.groups = c.groups.filter(g=>g.id!==dg.dataset.delg); changed(); toast('ลบกลุ่มแล้ว', undoTo(before)); return; }
+    if(e.target.id==='g_add'){ const used = new Set(c.groups.map(g=>g.name)); let i=c.groups.length+1; while(used.has('กลุ่ม '+i)) i++; c.groups.push({id:uid(), name:'กลุ่ม '+i, members:[]}); changed(); return; }
+    if(e.target.id==='g_clear'){ const before=snap(); c.groups = []; changed(); toast('ล้างกลุ่มทั้งหมดแล้ว', undoTo(before)); return; }
+    if(e.target.id==='g_rand'){
+      const N = c.students.length; if(!N) return;
+      const num = Math.max(1, Math.floor(+document.getElementById('g_n').value || 1));
+      const k = Math.min(N, document.getElementById('g_mode').value==='m' ? Math.ceil(N/num) : num);
+      const before = snap(), ids = c.students.map(x=>x.id);
+      for(let i=ids.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [ids[i],ids[j]]=[ids[j],ids[i]]; }
+      c.groups = Array.from({length:k}, (_,i)=>({id:uid(), name:'กลุ่ม '+(i+1), members:[]}));
+      ids.forEach((id,i)=>c.groups[i%k].members.push(id));
+      changed(); toast(`สุ่มแบ่งเป็น ${k} กลุ่มแล้ว`, undoTo(before));
+    }
+  };
+}
+
 function moveCell(from, dr, dc){
   const r = +from.dataset.r + dr, ci = +from.dataset.c + dc;
   const next = document.querySelector(`#scoreGrid .cell[data-r="${r}"][data-c="${ci}"]`);
@@ -725,14 +833,16 @@ function taskDialog(task){
     <div class="field"><label for="f_name">ชื่องาน</label><input class="ctl" id="f_name" required maxlength="60" value="${esc(task.name)}"></div>
     <div class="field"><label for="f_max">คะแนนเต็ม</label><input class="ctl" id="f_max" type="number" min="0.5" step="0.5" required value="${task.max}"></div>
     <div class="field"><label for="f_cat">ประเภท</label><select class="ctl" id="f_cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${k===task.cat?'selected':''}>${v.name}</option>`).join('')}</select></div>
+    <label class="field-chk"><input type="checkbox" id="f_group" ${task.group?'checked':''}> <span><b>คะแนนกลุ่ม</b> — ทุกคนในกลุ่มได้คะแนนเท่ากัน (ใส่ช่องของใครก็ได้ในกลุ่ม)<br><span class="hint">กำหนดว่าใครอยู่กลุ่มไหนที่ปุ่ม “จัดกลุ่ม” ในหน้าคะแนน</span></span></label>
     ${isNew?'':'<p style="margin:0 0 12px"><button type="button" class="btn sm" id="fillMax">✨ ใส่คะแนนเต็มให้คนที่ยังว่าง</button></p>'}
     <div class="dlg-foot">${isNew?'':'<button type="button" class="btn danger left" id="delTask">ลบงานนี้</button>'}
       <button type="button" class="btn" value="cancel" data-close>ยกเลิก</button><button class="btn pri" value="ok">บันทึก</button></div>`,
     f=>{
       const name=f.f_name.value.trim(), max=+f.f_max.value;
       if(!name || !(max>0)) return false;
-      if(isNew){ c.tasks.push({id:uid(), name, max, cat:f.f_cat.value}); }
-      else Object.assign(c.tasks.find(t=>t.id===task.id), {name, max, cat:f.f_cat.value});
+      const grp = !!document.getElementById('f_group').checked;
+      if(isNew){ c.tasks.push({id:uid(), name, max, cat:f.f_cat.value, group:grp}); }
+      else Object.assign(c.tasks.find(t=>t.id===task.id), {name, max, cat:f.f_cat.value, group:grp});
       save(); render();
       if(isNew) setTimeout(()=>{ const ci=c.tasks.length-1; const el=document.querySelector(`#scoreGrid .cell[data-r="0"][data-c="${ci}"]`); el?.focus(); el?.scrollIntoView({block:'nearest',inline:'center'}); },30);
     });
@@ -1553,6 +1663,7 @@ document.addEventListener('click', e=>{
     case 'editClass': if(c) classDialog(true); break;
     case 'demo': demo(); animateView(); break;
     case 'random': randomDialog(); break;
+    case 'groups': closeMenu(); groupsDialog(); break;
     case 'img': closeMenu(); imageExportDialog(); break;
     case 'xlsx': exportXLSX(); break;
     case 'connect': connectDialog(); break;
