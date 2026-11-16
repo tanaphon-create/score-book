@@ -308,8 +308,16 @@ function setupLoginCheck() {
 function classesBrief_() {
   return {ok: true, classes: load_().classes.map(c => ({
     id: c.id, name: c.name, subject: c.subject || '',
-    students: (c.students || []).map(s => ({code: String(s.code || '').trim(), name: s.name}))
+    students: (c.students || []).map(s => ({code: String(s.code || '').trim(), name: s.name})),
+    sets: setsBrief_(c)
   }))};
+}
+// ชุดกลุ่มของห้อง (ใช้ในโหมดห้องเรียน) — สมาชิกส่งเป็นเลขประจำตัว
+function setsBrief_(c) {
+  const sets = (c.gsets && c.gsets.length) ? c.gsets : ((c.groups && c.groups.length) ? [{id: 'legacy', name: 'ชุดกลุ่ม 1', groups: c.groups}] : []);
+  const codeOf = {};
+  (c.students || []).forEach(s => { codeOf[s.id] = String(s.code || '').trim(); });
+  return sets.map(gs => ({id: gs.id, name: gs.name, groups: (gs.groups || []).map(g => ({name: g.name, members: (g.members || []).map(id => codeOf[id]).filter(Boolean)}))}));
 }
 
 // เพิ่มคะแนนเสริมลงห้องที่เลือก จับคู่ด้วยเลขประจำตัว — กดซ้ำเกมเดิมจะไม่บวกซ้ำ (เช็ก gk)

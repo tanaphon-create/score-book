@@ -423,6 +423,7 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
       <button class="btn icon-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-label="เมนูเพิ่มเติม">⋯</button>
       <div class="menu-pop" id="menuPop" role="menu">
         <button data-act="quiz" role="menuitem">🎮 เกมคำถามฟลุ๊กถูก (จอครู)</button>
+        <button data-act="live" role="menuitem">🖥 โหมดห้องเรียน (กดแข่ง · สุ่ม · ความคิดเห็น)</button>
         <hr>
         <button data-act="newClass" role="menuitem">＋ เพิ่มห้องเรียน</button>
         <button data-act="editClass" role="menuitem">✎ แก้ไขชื่อห้อง/วิชา</button>
@@ -1892,6 +1893,7 @@ document.addEventListener('click', e=>{
     case 'connect': connectDialog(); break;
     case 'studentPage': closeMenu(); studentPageDialog(); break;
     case 'quiz': closeMenu(); window.open(QUIZ_URL, '_blank'); break;
+    case 'live': { closeMenu(); const c = C(); const u = new URL('../quiz-live/live.html', location.href); if(c){ u.searchParams.set('class', c.id); const gs = c.gsets && (c.gsets.find(x=>x.id===c.gactive) || c.gsets[0]); if(gs) u.searchParams.set('set', gs.id); } window.open(u.href, '_blank'); break; }
     case 'logout': logout(); break;
     case 'openSheet': closeMenu(); window.open(SHEET_URL, '_blank', 'noopener'); break;
     case 'addTask': taskDialog(null); break;
