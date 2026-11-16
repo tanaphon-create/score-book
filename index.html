@@ -382,6 +382,7 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <button data-act="newClass" role="menuitem">＋ เพิ่มห้องเรียน</button>
         <button data-act="editClass" role="menuitem">✎ แก้ไขชื่อห้อง/วิชา</button>
         <hr>
+        <button data-act="renumberAll" role="menuitem">🔢 จัดเลขที่ใหม่ทุกห้อง (ไม่เว้น)</button>
         <button data-act="groups" role="menuitem">👥 จัดกลุ่มนักเรียน</button>
         <button data-act="random" role="menuitem">🎲 สุ่มชื่อนักเรียน</button>
         <hr>
@@ -1263,6 +1264,24 @@ function buildWorkbook(c){
 }
 
 /* ================= students ================= */
+/* จัดเลขที่ใหม่ให้ต่อเนื่อง 1..N ไม่เว้น (เรียงตามเลขที่เดิม ใครเว้นก็นับต่อ) */
+function renumberClass(c){
+  const order = [...c.students].sort((a,b)=>(+a.no||1e9)-(+b.no||1e9) || String(a.name).localeCompare(b.name,'th'));
+  let changed = 0;
+  order.forEach((st,i)=>{ const n = String(i+1); if(String(st.no)!==n){ st.no = n; changed++; } });
+  return changed;
+}
+function renumberDo(all){
+  const targets = all ? S.classes : [C()].filter(Boolean);
+  const snap = new Map(targets.map(c=>[c.id, c.students.map(st=>[st.id, st.no])]));
+  let ch = 0, cl = 0; targets.forEach(c=>{ const n = renumberClass(c); if(n){ ch += n; cl++; } });
+  if(!ch){ toast('เลขที่เรียงต่อเนื่องอยู่แล้ว ไม่มีอะไรต้องแก้'); return; }
+  save(); render();
+  toast(`จัดเลขที่ใหม่แล้ว: เปลี่ยน ${ch} คน (${cl} ห้อง)`, ()=>{
+    targets.forEach(c=>{ const m = new Map(snap.get(c.id)); c.students.forEach(st=>{ if(m.has(st.id)) st.no = m.get(st.id); }); });
+    save(); render();
+  });
+}
 function viewStu(v, c){
   const list = sortedStudents(c);
   v.innerHTML = `
@@ -1270,6 +1289,7 @@ function viewStu(v, c){
     <div class="card">
       <div class="pad" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)">
         <div style="margin-right:auto"><h2>รายชื่อนักเรียน ${esc(c.name)}</h2><span class="hint">${c.students.length} คน · แก้ไขในช่องได้เลย</span></div>
+        <button class="btn" data-act="renumber" title="เรียงเลขที่ 1, 2, 3… ต่อเนื่อง ไม่เว้น">🔢 จัดเลขที่ใหม่</button>
         <button class="btn pri" data-act="addStu">＋ เพิ่มนักเรียน</button>
       </div>
       ${list.length?`<div class="tbl-wrap" style="border-radius:0 0 var(--r) var(--r)"><table class="grid"><thead><tr><th style="width:80px">เลขที่</th><th style="width:130px">รหัส</th><th style="text-align:left">ชื่อ-สกุล</th><th style="width:60px"></th></tr></thead><tbody>
@@ -1678,6 +1698,8 @@ document.addEventListener('click', e=>{
     case 'editClass': if(c) classDialog(true); break;
     case 'demo': demo(); animateView(); break;
     case 'random': randomDialog(); break;
+    case 'renumber': renumberDo(false); break;
+    case 'renumberAll': closeMenu(); renumberDo(true); break;
     case 'groups': closeMenu(); groupsDialog(); break;
     case 'img': closeMenu(); imageExportDialog(); break;
     case 'xlsx': exportXLSX(); break;
