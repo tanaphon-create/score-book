@@ -2,11 +2,32 @@
  * สมุดคะแนนรายห้อง — ฐานข้อมูล Google Sheet
  * วิธีติดตั้ง: ดู README.md ในโฟลเดอร์ score-book
  *
- * 1) เปลี่ยน PIN ด้านล่างเป็นรหัสของคุณเอง (ใช้ตอนเชื่อมต่อจากหน้าเว็บ)
+ * 1) ใส่อีเมลครูที่มีสิทธิ์ใน TEACHER_EMAILS (หน้าเว็บล็อกอิน Google แล้วส่ง token มาให้ตรวจ)
  * 2) Deploy > New deployment > Web app
  *    Execute as: Me   ·   Who has access: Anyone
  */
-const PIN = 'เปลี่ยนรหัสนี้';
+const TEACHER_EMAILS = ['tanaphon@wangchan.ac.th'];
+const FIREBASE_API_KEY = 'AIzaSyAtzOh4utxj9-ry2PNWH7YrqMb_UjuaNOs'; // โปรเจกต์ quizlive-wcw (ใช้ตรวจ token เท่านั้น)
+
+// ตรวจ Firebase ID token กับ Google: ต้องเป็นอีเมลครูที่ยืนยันแล้ว (จำผลไว้ 30 นาที ไม่ต้องถามซ้ำทุกครั้ง)
+function authOk_(p) {
+  const tok = String(p.idToken || '');
+  if (tok.length < 100) return false;
+  const cache = CacheService.getScriptCache();
+  const key = 'tk_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, tok));
+  const hit = cache.get(key);
+  if (hit) return hit === '1';
+  const r = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + FIREBASE_API_KEY, {
+    method: 'post', contentType: 'application/json', payload: JSON.stringify({idToken: tok}), muteHttpExceptions: true
+  });
+  let ok = false;
+  if (r.getResponseCode() === 200) {
+    const u = (JSON.parse(r.getContentText()).users || [])[0];
+    ok = !!u && u.emailVerified === true && TEACHER_EMAILS.indexOf(String(u.email || '').toLowerCase()) >= 0;
+  }
+  cache.put(key, ok ? '1' : '0', ok ? 1800 : 60);
+  return ok;
+}
 
 // ถ้าสคริปต์ไม่ได้สร้างจากเมนู ส่วนขยาย > Apps Script ของชีตโดยตรง ให้ใส่รหัสไฟล์ชีตที่นี่ (ส่วนที่อยู่ระหว่าง /d/ กับ /edit ในลิงก์)
 const SPREADSHEET_ID = '';
@@ -24,9 +45,9 @@ function doPost(e) {
   let p = {};
   try { p = JSON.parse(e.postData.contents); } catch (_) {}
   try {
-    // หน้านักเรียน: ค้นด้วยเลขประจำตัว ไม่ต้องใช้ PIN (ส่งเฉพาะข้อมูลของคนนั้น และเฉพาะเมื่อครูเปิดไว้)
+    // หน้านักเรียน: ค้นด้วยเลขประจำตัว ไม่ต้องล็อกอิน (ส่งเฉพาะข้อมูลของคนนั้น และเฉพาะเมื่อครูเปิดไว้)
     if (p.action === 'student') return out_(studentLookup_(p.code));
-    if (String(p.pin) !== String(PIN)) return out_({ok: false, error: 'pin'});
+    if (!authOk_(p)) return out_({ok: false, error: 'auth'});
     if (p.action === 'ping') return out_({ok: true, publish: isPublished_()});
     if (p.action === 'setpublish') {
       PropertiesService.getScriptProperties().setProperty('PUBLISH', p.on ? '1' : '0');
@@ -266,4 +287,11 @@ function band_(sh, headRow, n, w) {
     sh.getRange(headRow, 1, n + 1, w).setHorizontalAlignment('center').setVerticalAlignment('middle');
   }
   sh.getRange(headRow, 1, 1, w).setFontColor('#ffffff').setBackground('#4f46e5').setFontWeight('bold');
+}
+
+
+// กดเรียกใช้ครั้งเดียวเพื่อให้สิทธิ์ "เชื่อมต่อบริการภายนอก" (ใช้ตรวจการล็อกอินครูกับ Google)
+function setupLoginCheck() {
+  const r = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + FIREBASE_API_KEY, {method: 'post', contentType: 'application/json', payload: '{"idToken":"x"}', muteHttpExceptions: true});
+  Logger.log('ตรวจการล็อกอินพร้อมใช้งาน (HTTP ' + r.getResponseCode() + ')');
 }

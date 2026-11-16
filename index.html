@@ -368,9 +368,31 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
   .tbl-wrap{max-height:none;overflow:visible}
   .card{box-shadow:none;backdrop-filter:none;background:#fff}
 }
+/* ---------- หน้าเข้าสู่ระบบครู ---------- */
+.gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:var(--bg,#0f0b24);background-image:radial-gradient(900px 600px at 15% 10%,rgba(124,92,255,.35),transparent 60%),radial-gradient(800px 600px at 90% 90%,rgba(56,189,248,.25),transparent 60%)}
+.gate[hidden]{display:none}
+.gate-card{width:min(420px,100%);background:var(--surface);color:var(--text,inherit);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:28px 24px;display:grid;gap:12px;justify-items:center;text-align:center}
+.gate-card .logo{font-size:22px}
+.gate-card h2{margin:4px 0 0;font-size:20px}
+.gate-card p{margin:0}
+.g-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:#fff;color:#1f1d2b;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.08)}
+.g-btn:hover{filter:brightness(.97)}
+.gate-msg{min-height:1.3em;color:var(--bad);font-weight:500}
+.gate-note{font-size:13px;opacity:.75}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="logo"><i aria-hidden="true">✓</i><span>สมุดคะแนน</span></div>
+    <h2>เข้าสู่ระบบสำหรับครู</h2>
+    <p class="hint">ล็อกอินครั้งเดียว ใช้ได้ทั้งสมุดคะแนนและเกมคำถามฟลุ๊กถูก</p>
+    <button class="g-btn" id="gateLogin"><svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>เข้าสู่ระบบด้วย Google</button>
+    <button class="btn" id="gateSwitch" hidden>สลับบัญชี</button>
+    <p class="gate-msg" id="gateMsg" role="alert">กำลังตรวจสอบการเข้าสู่ระบบ…</p>
+    <p class="gate-note">นักเรียนดูคะแนนได้ที่ <a href="student.html">หน้านักเรียน</a></p>
+  </div>
+</div>
 <header class="top">
   <div class="top-in">
     <div class="logo"><i aria-hidden="true">✓</i><span>สมุดคะแนน</span></div>
@@ -393,11 +415,14 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <label role="menuitem">📂 กู้คืนจากไฟล์สำรอง<input type="file" accept=".json,application/json" id="restoreFile" hidden></label>
         <button data-act="print" role="menuitem">🖨 พิมพ์หน้านี้</button>
         <hr>
-        <button data-act="connect" role="menuitem">🔗 เชื่อมต่อ Google Sheet</button>
+        <button data-act="quiz" role="menuitem">🎮 เกมคำถามฟลุ๊กถูก (จอครู)</button>
+        <button data-act="connect" role="menuitem">🔄 ซิงก์กับ Google Sheet ตอนนี้</button>
         <button data-act="openSheet" role="menuitem">📊 เปิด Google Sheet</button>
         <button data-act="studentPage" role="menuitem">🔎 หน้านักเรียนดูคะแนน</button>
         <button data-act="theme" role="menuitem">◐ สลับโหมดมืด/สว่าง</button>
         <button data-act="delClass" role="menuitem" class="danger" style="color:var(--bad)">🗑 ลบห้องนี้</button>
+        <hr>
+        <button data-act="logout" role="menuitem" id="logoutItem">🚪 ออกจากระบบ</button>
       </div>
     </div>
   </div>
@@ -450,9 +475,43 @@ function save(){
   }, 200);
 }
 
+/* ---------- เข้าสู่ระบบด้วย Google (ใช้ร่วมกับเกมคำถามฟลุ๊กถูก — Firebase โปรเจกต์เดียวกัน ชื่อแอปเดียวกัน) ---------- */
+const FB = {apiKey:'AIzaSyAtzOh4utxj9-ry2PNWH7YrqMb_UjuaNOs', authDomain:'quizlive-wcw.firebaseapp.com', projectId:'quizlive-wcw', appId:'1:898045012173:web:06a1ac1c42db1128d52184'};
+const TEACHER_EMAILS = ['tanaphon@wangchan.ac.th'];
+const QUIZ_URL = '../quiz-live/host.html';
+let fbAuth = null, fbA = null, lastTok = '';
+const isTeacher = u => !!u && !u.isAnonymous && u.emailVerified !== false && TEACHER_EMAILS.includes((u.email||'').toLowerCase());
+const authReady = (async()=>{
+  const b = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const [{initializeApp}, A] = await Promise.all([import(b+'firebase-app.js'), import(b+'firebase-auth.js')]);
+  fbA = A; fbAuth = A.getAuth(initializeApp(FB, 'quizlive'));
+  return fbAuth;
+})();
+async function idToken(){ const u = fbAuth?.currentUser; if(!isTeacher(u)) throw {error:'auth'}; lastTok = await u.getIdToken(); return lastTok; }
+function lockGate(msg, wrong){
+  document.getElementById('gate').hidden = false;
+  document.getElementById('gateMsg').innerHTML = msg || '';
+  document.getElementById('gateLogin').hidden = !!wrong;
+  document.getElementById('gateSwitch').hidden = !wrong;
+}
+document.getElementById('gateLogin').onclick = async()=>{
+  try{ await authReady; document.getElementById('gateMsg').textContent = '';
+    const prov = new fbA.GoogleAuthProvider(); prov.setCustomParameters({prompt:'select_account', login_hint: TEACHER_EMAILS[0]});
+    await fbA.signInWithPopup(fbAuth, prov);
+  }catch(e){ document.getElementById('gateMsg').textContent = e?.code==='auth/popup-blocked' ? 'เบราว์เซอร์บล็อกหน้าต่างล็อกอิน — อนุญาตป๊อปอัปแล้วลองใหม่' : e?.code==='auth/popup-closed-by-user' ? '' : 'ล็อกอินไม่สำเร็จ ลองใหม่อีกครั้ง'; }
+};
+document.getElementById('gateSwitch').onclick = ()=> fbA && fbA.signOut(fbAuth);
+async function logout(){
+  closeMenu();
+  if(!confirm('ออกจากระบบ? (ข้อมูลที่เก็บไว้ในเครื่องนี้จะถูกล้าง ข้อมูลบน Google Sheet ยังอยู่ครบ)')) return;
+  if(API && pending().any){ await syncNow(); if(lastErr && !confirm('ยังบันทึกลง Sheet ไม่สำเร็จ ถ้าออกตอนนี้ การแก้ไขล่าสุดจะหาย ออกเลยไหม?')) return; }
+  try{ localStorage.removeItem(KEY); localStorage.removeItem(BASE_KEY); localStorage.removeItem(API_KEY); }catch(e){}
+  await fbA.signOut(fbAuth); location.reload();
+}
+
 /* ---------- Google Sheet sync (Apps Script web app) ---------- */
 const API_KEY = 'scorebook.api', BASE_KEY = 'scorebook.syncbase';
-// ลิงก์ฐานข้อมูลของครูธนพล — ฝังไว้ เครื่องใหม่จึงใส่แค่ PIN (ไม่มี PIN อ่าน/เขียนไม่ได้)
+// ลิงก์ฐานข้อมูลของครูธนพล — สิทธิ์อ่าน/เขียนมาจากการล็อกอินอีเมลครู (สคริปต์ตรวจ token กับ Google ทุกครั้ง)
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbwJsr4hqB6Xq5RRTQFFeWZ3KxaTmpXQcNg52Vn5kjouwKiX9LO9OI3TxuRU-c18e8PDuA/exec';
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1dmwEbCLtZ-Dvk5Z0OrJIEeLO1vRvEuklAe-U9e9N9g4/edit';
 let API = (()=>{ try{ const a=JSON.parse(localStorage.getItem(API_KEY)); return a&&a.url ? a : null; }catch(e){ return null; } })();
@@ -474,7 +533,7 @@ function setStatus(kind, extra){
   el.dataset.kind = kind;
 }
 async function api(body){
-  const r = await fetch(API.url, {method:'POST', body: JSON.stringify({...body, pin: API.pin})});
+  const r = await fetch(API.url, {method:'POST', body: JSON.stringify({...body, idToken: await idToken()})});
   let j; try{ j = await r.json(); }catch(e){ throw {error:'bad_response'}; }
   if(!j.ok) throw j;
   return j;
@@ -502,7 +561,7 @@ async function syncNow(){
     try{ localStorage.setItem(BASE_KEY, JSON.stringify(base)); }catch(e){}
     lastErr = null; setStatus('ok');
   }catch(e){
-    lastErr = e; setStatus('err', e?.error==='pin' ? 'รหัสไม่ถูกต้อง' : 'ออฟไลน์');
+    lastErr = e; setStatus('err', e?.error==='auth' ? 'ต้องล็อกอินใหม่' : 'ออฟไลน์');
     clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 30000);   // retry later
   }
   syncing = false;
@@ -524,7 +583,7 @@ async function pullFromSheet(){
     try{ localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem(BASE_KEY, JSON.stringify(base)); }catch(e){}
     if(JSON.stringify(S.classes)!==before && !document.activeElement?.matches('input,textarea')) render();
     setStatus('ok');
-  }catch(e){ lastErr = e; setStatus('err', e?.error==='pin' ? 'รหัสไม่ถูกต้อง' : 'ออฟไลน์'); }
+  }catch(e){ lastErr = e; setStatus('err', e?.error==='auth' ? 'ต้องล็อกอินใหม่' : 'ออฟไลน์'); }
 }
 /* ---------- หน้านักเรียนดูคะแนน (student.html) ---------- */
 async function studentPageDialog(){
@@ -532,7 +591,7 @@ async function studentPageDialog(){
   const link = new URL('student.html', location.href).href.replace(/\?.*$/,'');
   let pub = null;
   const draw = () => openDialog(`<h2>หน้านักเรียนดูคะแนน</h2>
-    <p class="hint" style="margin-top:0">นักเรียนพิมพ์เลขประจำตัว แล้วเห็นคะแนน การมาเรียน และคะแนนเสริมของตัวเองทั้งหมด (ไม่ต้องใช้ PIN)</p>
+    <p class="hint" style="margin-top:0">นักเรียนพิมพ์เลขประจำตัว แล้วเห็นคะแนน การมาเรียน และคะแนนเสริมของตัวเองทั้งหมด (นักเรียนไม่ต้องล็อกอิน)</p>
     <div class="field"><label>สถานะ</label>
       <div>${pub===null?'<span class="chip">กำลังตรวจสอบ…</span>':pub?'<span class="chip ok">เปิดอยู่ — นักเรียนค้นหาได้</span>':'<span class="chip warn">ปิดอยู่ — นักเรียนยังดูไม่ได้</span>'}</div></div>
     <div class="field"><label for="f_link">ลิงก์ให้นักเรียน</label><input class="ctl" id="f_link" readonly value="${esc(link)}" onfocus="this.select()"></div>
@@ -544,40 +603,16 @@ async function studentPageDialog(){
   const bind = () => {
     const cp = document.getElementById('spCopy'), tg = document.getElementById('spToggle');
     cp && (cp.onclick = async()=>{ try{ await navigator.clipboard.writeText(link); toast('คัดลอกลิงก์แล้ว'); }catch(e){ document.getElementById('f_link').select(); toast('เลือกลิงก์ไว้แล้ว กด Ctrl+C'); } });
-    tg && (tg.onclick = async()=>{ tg.disabled = true; try{ const j = await api({action:'setpublish', on: !pub}); pub = !!j.publish; toast(pub?'เปิดหน้านักเรียนแล้ว':'ปิดหน้านักเรียนแล้ว'); }catch(e){ toast('ทำรายการไม่สำเร็จ ('+(e?.error==='pin'?'รหัสไม่ถูกต้อง':'ลองใหม่')+')'); } draw(); bind(); });
+    tg && (tg.onclick = async()=>{ tg.disabled = true; try{ const j = await api({action:'setpublish', on: !pub}); pub = !!j.publish; toast(pub?'เปิดหน้านักเรียนแล้ว':'ปิดหน้านักเรียนแล้ว'); }catch(e){ toast('ทำรายการไม่สำเร็จ ('+(e?.error==='auth'?'ต้องล็อกอินใหม่':'ลองใหม่')+')'); } draw(); bind(); });
   };
   bind();
   try{ const j = await api({action:'ping'}); pub = j.publish===undefined ? false : !!j.publish; }catch(e){ pub = false; }
   draw(); bind();
 }
 function connectDialog(){
-  openDialog(`<h2>เชื่อมต่อ Google Sheet</h2>
-    <p class="hint" style="margin-top:0">ลิงก์ฐานข้อมูลใส่ไว้ให้แล้ว พิมพ์แค่ <b>รหัส PIN</b> แล้วกดเชื่อมต่อ (ทำครั้งเดียวต่อเครื่อง)</p>
-    <div class="field"><label for="f_pin">รหัส PIN</label><input class="ctl" id="f_pin" type="password" required autofocus autocomplete="current-password" value="${esc(API?.pin||'')}"></div>
-    <details class="hint" style="margin:4px 0 8px"><summary style="cursor:pointer">เปลี่ยนลิงก์ Web app (ไม่ต้องแก้ ถ้าใช้ชีตเดิม)</summary>
-      <div class="field" style="margin-top:8px"><label for="f_url">ลิงก์ Web app (ลงท้ายด้วย /exec)</label><input class="ctl" id="f_url" required placeholder="https://script.google.com/macros/s/…/exec" value="${esc(API?.url||DEFAULT_API_URL)}"></div></details>
-    <p class="hint" id="f_msg" role="alert"></p>
-    <div class="dlg-foot">${API?'<button type="button" class="btn danger left" id="disc">ยกเลิกการเชื่อมต่อ</button>':''}<button type="button" class="btn" data-close>ปิด</button><button class="btn pri" id="f_go">เชื่อมต่อ</button></div>`,
-  f=>{
-    const url=f.f_url.value.trim(), pin=f.f_pin.value;
-    const msg=document.getElementById('f_msg'), go=document.getElementById('f_go');
-    if(!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)){ msg.textContent='⚠ ลิงก์ต้องเป็นของ script.google.com'; return false; }
-    go.disabled=true; msg.textContent='กำลังทดสอบการเชื่อมต่อ…';
-    const prev = API; API = {url, pin};
-    api({action:'ping'}).then(()=>{
-      try{ localStorage.setItem(API_KEY, JSON.stringify(API)); }catch(e){}
-      if(!prev || prev.url!==url){ base = {}; try{ localStorage.removeItem(BASE_KEY); }catch(e){} }
-      closeDialog(); toast('เชื่อมต่อ Google Sheet แล้ว'); pullFromSheet();
-    }).catch(e=>{
-      API = prev; go.disabled=false;
-      msg.textContent = e?.error==='pin' ? '⚠ รหัส PIN ไม่ถูกต้อง' : '⚠ เชื่อมต่อไม่ได้ — ตรวจลิงก์ และตั้งสิทธิ์ Web app เป็น "Anyone"';
-    });
-    return false;
-  });
-  document.getElementById('disc')?.addEventListener('click', ()=>{
-    API=null; base={}; try{ localStorage.removeItem(API_KEY); localStorage.removeItem(BASE_KEY); }catch(e){}
-    closeDialog(); setStatus('local'); toast('ยกเลิกการเชื่อมต่อแล้ว (ข้อมูลยังอยู่ในเครื่องนี้)');
-  });
+  closeMenu();
+  if(!API){ lockGate('เข้าสู่ระบบเพื่อเชื่อมต่อ Google Sheet'); return; }
+  toast('กำลังซิงก์กับ Google Sheet…'); pullFromSheet();
 }
 const uid = () => Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
 const C = () => S.classes.find(c => c.id === S.cur);
@@ -1705,6 +1740,8 @@ document.addEventListener('click', e=>{
     case 'xlsx': exportXLSX(); break;
     case 'connect': connectDialog(); break;
     case 'studentPage': closeMenu(); studentPageDialog(); break;
+    case 'quiz': closeMenu(); window.open(QUIZ_URL, '_blank'); break;
+    case 'logout': logout(); break;
     case 'openSheet': closeMenu(); window.open(SHEET_URL, '_blank', 'noopener'); break;
     case 'addTask': taskDialog(null); break;
     case 'allPresent': { const day=(c.attendance[attDate] ||= {}); c.students.forEach(s=>{ if(!day[s.id]) day[s.id]='P'; }); save(); render(); toast('เช็คมาทุกคนที่ยังไม่ได้เช็คแล้ว'); break; }
@@ -1788,9 +1825,21 @@ document.addEventListener('focusout', e=>{
 try{ const th=localStorage.getItem('scorebook.theme'); if(th) document.documentElement.dataset.theme=th; }catch(e){}
 if(!S.cur && S.classes[0]) S.cur = S.classes[0].id;
 render(); animateView();
-if(API) pullFromSheet(); else setStatus('local');
+setStatus('local');
+authReady.then(auth => fbA.onAuthStateChanged(auth, u => {
+  if(isTeacher(u)){
+    API = {url: (()=>{ try{ return JSON.parse(localStorage.getItem(API_KEY))?.url; }catch(e){} })() || DEFAULT_API_URL};
+    try{ localStorage.setItem(API_KEY, JSON.stringify(API)); }catch(e){}
+    document.getElementById('gate').hidden = true;
+    document.getElementById('logoutItem').textContent = '🚪 ออกจากระบบ (' + u.email + ')';
+    pullFromSheet();
+  } else {
+    API = null;
+    lockGate(u && !u.isAnonymous ? `⛔ อีเมล <b>${esc(u.email)}</b> ไม่มีสิทธิ์เข้าสมุดคะแนน` : '', u && !u.isAnonymous);
+  }
+})).catch(()=> lockGate('โหลดระบบล็อกอินไม่ได้ — ตรวจอินเทอร์เน็ตแล้วรีเฟรช'));
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && API) pullFromSheet(); });
-window.addEventListener('pagehide', ()=>{ if(API && pending().any && navigator.sendBeacon){ const p=pending(); navigator.sendBeacon(API.url, JSON.stringify({action:'save', pin:API.pin, classes:p.changed, deleted:p.deleted, meta:metaObj()})); } });
+window.addEventListener('pagehide', ()=>{ if(API && pending().any && navigator.sendBeacon){ const p=pending(); navigator.sendBeacon(API.url, JSON.stringify({action:'save', idToken:lastTok, classes:p.changed, deleted:p.deleted, meta:metaObj()})); } });
 window.addEventListener('beforeunload', ()=>{ clearTimeout(saveTimer); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} });
 </script>
 <script>
