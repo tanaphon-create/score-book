@@ -370,6 +370,9 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
 }
 /* ---------- หน้าเข้าสู่ระบบครู ---------- */
 .gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:var(--bg,#0f0b24);background-image:radial-gradient(900px 600px at 15% 10%,rgba(124,92,255,.35),transparent 60%),radial-gradient(800px 600px at 90% 90%,rgba(56,189,248,.25),transparent 60%)}
+.quiz-btn{text-decoration:none;gap:6px;white-space:nowrap;background:linear-gradient(90deg,#FF6F91,#FF9F43);color:#fff;border-color:transparent;font-weight:600}
+.quiz-btn:hover{filter:brightness(1.06)}
+@media (max-width:640px){.quiz-btn .qb-t{display:none}}
 .gate[hidden],.gate [hidden]{display:none!important}
 .gate-card .logo span{display:inline!important}
 .gate-card{width:min(420px,100%);background:var(--surface);color:var(--text,inherit);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:28px 24px;display:grid;gap:12px;justify-items:center;text-align:center}
@@ -398,10 +401,13 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
   <div class="top-in">
     <div class="logo"><i aria-hidden="true">✓</i><span>สมุดคะแนน</span></div>
     <div class="class-pick" id="classPick"></div>
+    <a class="btn quiz-btn" href="../quiz-live/host.html" target="_blank" rel="noopener" title="เปิดเกมคำถามฟลุ๊กถูก (จอครู)"><span aria-hidden="true">🎮</span><span class="qb-t">เกมคำถาม</span></a>
     <button class="saved" id="saved" data-act="connect" aria-live="polite" title="ตั้งค่าการเชื่อมต่อ Google Sheet"><i></i>บันทึกอัตโนมัติ</button>
     <div class="menu">
       <button class="btn icon-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-label="เมนูเพิ่มเติม">⋯</button>
       <div class="menu-pop" id="menuPop" role="menu">
+        <button data-act="quiz" role="menuitem">🎮 เกมคำถามฟลุ๊กถูก (จอครู)</button>
+        <hr>
         <button data-act="newClass" role="menuitem">＋ เพิ่มห้องเรียน</button>
         <button data-act="editClass" role="menuitem">✎ แก้ไขชื่อห้อง/วิชา</button>
         <hr>
@@ -416,7 +422,6 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <label role="menuitem">📂 กู้คืนจากไฟล์สำรอง<input type="file" accept=".json,application/json" id="restoreFile" hidden></label>
         <button data-act="print" role="menuitem">🖨 พิมพ์หน้านี้</button>
         <hr>
-        <button data-act="quiz" role="menuitem">🎮 เกมคำถามฟลุ๊กถูก (จอครู)</button>
         <button data-act="connect" role="menuitem">🔄 ซิงก์กับ Google Sheet ตอนนี้</button>
         <button data-act="openSheet" role="menuitem">📊 เปิด Google Sheet</button>
         <button data-act="studentPage" role="menuitem">🔎 หน้านักเรียนดูคะแนน</button>
