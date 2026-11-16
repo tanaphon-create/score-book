@@ -60,6 +60,12 @@ function doPost(e) {
       try { save_(p); } finally { lock.releaseLock(); }
       return out_({ok: true, at: Date.now()});
     }
+    if (p.action === 'classes') return out_(classesBrief_());
+    if (p.action === 'addbonus') {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(25000);
+      try { return out_(addBonus_(p)); } finally { lock.releaseLock(); }
+    }
     return out_({ok: false, error: 'action'});
   } catch (err) {
     return out_({ok: false, error: String(err && err.message || err)});
@@ -294,4 +300,38 @@ function band_(sh, headRow, n, w) {
 function setupLoginCheck() {
   const r = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + FIREBASE_API_KEY, {method: 'post', contentType: 'application/json', payload: '{"idToken":"x"}', muteHttpExceptions: true});
   Logger.log('ตรวจการล็อกอินพร้อมใช้งาน (HTTP ' + r.getResponseCode() + ')');
+}
+
+
+/* ---------------- รับคะแนนพิเศษจากเกมคำถามฟลุ๊กถูก ---------------- */
+// รายชื่อห้อง + เลขประจำตัวนักเรียน (ใช้จับคู่ในหน้าเกม ไม่ส่งคะแนนออกไป)
+function classesBrief_() {
+  return {ok: true, classes: load_().classes.map(c => ({
+    id: c.id, name: c.name, subject: c.subject || '',
+    students: (c.students || []).map(s => ({code: String(s.code || '').trim(), name: s.name}))
+  }))};
+}
+
+// เพิ่มคะแนนเสริมลงห้องที่เลือก จับคู่ด้วยเลขประจำตัว — กดซ้ำเกมเดิมจะไม่บวกซ้ำ (เช็ก gk)
+function addBonus_(p) {
+  const all = load_();
+  const c = all.classes.find(x => x.id === p.classId);
+  if (!c) return {ok: false, error: 'class'};
+  c.bonus = c.bonus || [];
+  const date = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd');
+  const gk = String(p.gameKey || '').slice(0, 60);
+  const added = [], missing = [], dup = [];
+  let ts = Date.now();
+  (p.entries || []).slice(0, 60).forEach(e => {
+    const code = String(e.code || '').trim();
+    const pts = Math.max(-100, Math.min(100, Number(e.pts) || 0));
+    const st = (c.students || []).find(s => String(s.code || '').trim() === code);
+    if (!code || !st || !pts) { missing.push(code); return; }
+    if (gk && c.bonus.some(b => b.gk === gk && b.sid === st.id)) { dup.push(code); return; }
+    c.bonus.push({id: 'qz' + Math.random().toString(36).slice(2, 9), sid: st.id, pts: pts,
+      reason: String(e.reason || p.reason || 'ตอบคำถาม').slice(0, 120), date: date, ts: ts++, gk: gk});
+    added.push({code: code, name: st.name, pts: pts});
+  });
+  if (added.length) save_({classes: [c]});
+  return {ok: true, cls: c.name, added: added, missing: missing, dup: dup};
 }
