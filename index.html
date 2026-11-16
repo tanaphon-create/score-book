@@ -368,6 +368,22 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
   .tbl-wrap{max-height:none;overflow:visible}
   .card{box-shadow:none;backdrop-filter:none;background:#fff}
 }
+/* ---------- ชุดกลุ่ม / สุ่ม ---------- */
+.gset-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.gset-tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit;font-size:14px;font-weight:600;color:inherit}
+.gset-tab small{font-weight:400;color:var(--muted)}
+.gset-tab.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:var(--glow)}
+.gset-tab.on small{color:rgba(255,255,255,.8)}
+.gset-tab.add{border-style:dashed;color:var(--muted);font-weight:500}
+.gset-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.gset-bar .ctl{max-width:240px;min-height:36px;padding:4px 10px;font-weight:600}
+.gset-bar .grow{flex:1}
+.field[hidden]{display:none!important}
+.rand-opt{margin-top:12px}
+.rand-done,.rand-members{margin-top:10px}
+.rand-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.rand-chips .mchip{--gc:var(--brand)}
+.rand-members .rand-chips{justify-content:center}
 /* ---------- หน้าเข้าสู่ระบบครู ---------- */
 .gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:var(--bg,#0f0b24);background-image:radial-gradient(900px 600px at 15% 10%,rgba(124,92,255,.35),transparent 60%),radial-gradient(800px 600px at 90% 90%,rgba(56,189,248,.25),transparent 60%)}
 .quiz-btn{text-decoration:none;gap:6px;white-space:nowrap;background:linear-gradient(90deg,#FF6F91,#FF9F43);color:#fff;border-color:transparent;font-weight:600}
@@ -414,6 +430,7 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
         <button data-act="renumberAll" role="menuitem">🔢 จัดเลขที่ใหม่ทุกห้อง (ไม่เว้น)</button>
         <button data-act="groups" role="menuitem">👥 จัดกลุ่มนักเรียน</button>
         <button data-act="random" role="menuitem">🎲 สุ่มชื่อนักเรียน</button>
+        <button data-act="randGroup" role="menuitem">🎲 สุ่มกลุ่มตอบคำถาม</button>
         <hr>
         <button data-act="img" role="menuitem">🖼 ส่งออกสรุปเป็นรูปภาพ (PNG)</button>
         <button data-act="xlsx" role="menuitem">⬇ ส่งออก Excel / Google Sheet (.xlsx)</button>
@@ -738,7 +755,7 @@ function viewScores(v, c){
   <div class="toolbar">
     ${searchBox()}
     <span class="hint grow"><kbd>Enter</kbd> ลงคนถัดไป · ลูกศรเลื่อนช่อง · วางคะแนนทั้งคอลัมน์จาก Excel ได้</span>
-    <button class="btn" data-act="groups">👥 จัดกลุ่ม${(c.groups||[]).length?` (${c.groups.length})`:''}</button>
+    <button class="btn" data-act="groups">👥 จัดกลุ่ม${gsets(c).length?` (${gsets(c).length} ชุด)`:''}</button>
     <button class="btn pri" data-act="addTask">＋ เพิ่มงาน</button>
   </div>
   ${!c.tasks.length ? `<div class="card empty"><div class="big" aria-hidden="true">📝</div><h2>ยังไม่มีงาน</h2><p>เพิ่มงาน การบ้าน หรือการสอบ พร้อมคะแนนเต็ม แล้วกรอกคะแนนได้ทันที</p><div class="row"><button class="btn pri" data-act="addTask">＋ เพิ่มงานแรก</button></div></div>` : `
@@ -746,14 +763,14 @@ function viewScores(v, c){
   <table class="grid" id="scoreGrid">
     <thead><tr>
       <th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
-      ${c.tasks.map(t=>`<th><button class="task-h" data-task="${t.id}" title="แก้ไขงาน"><b><span class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></span>${t.group?'👥 ':''}${esc(t.name)}</b><small>เต็ม ${fmt(+t.max)}${t.group?' · กลุ่ม':''}</small></button></th>`).join('')}
+      ${c.tasks.map(t=>`<th><button class="task-h" data-task="${t.id}" title="แก้ไขงาน"><b><span class="cat-dot" style="background:${CATS[t.cat]?.color||'#999'}"></span>${t.group?'👥 ':''}${esc(t.name)}</b><small>เต็ม ${fmt(+t.max)}${t.group?' · '+esc(setOf(c,t)?.name||'กลุ่ม'):''}</small></button></th>`).join('')}
       <th>เสริม</th><th>รวม<br><small>/${fmt(max)}</small></th><th>%</th><th>เกรด</th>
     </tr></thead>
     <tbody>
     ${list.map((s,r)=>{ const st=statOf(c,s); return `<tr data-sid="${s.id}">
       <td class="c-no">${esc(s.no)}</td><td class="c-name"><div class="nm-row">${groupBadge(c,s.id)}${nameBtn(s)}</div></td>
-      ${c.tasks.map((t,ci)=>{ const val=c.scores[t.id]?.[s.id]; const bad = val!=null && val!=='' && +val>+t.max; const gg = t.group ? groupOf(c,s.id) : null;
-        return `<td${gg?` class="gcell" style="--gc:${gColor(c,gg)}" title="คะแนนกลุ่ม: ${esc(gg.name)}"`:''}><input class="cell${bad?' err':''}" inputmode="decimal" autocomplete="off" aria-label="${esc(s.name)} ${esc(t.name)}" data-r="${r}" data-c="${ci}" data-t="${t.id}" value="${val??''}" placeholder="·"></td>`}).join('')}
+      ${c.tasks.map((t,ci)=>{ const val=c.scores[t.id]?.[s.id]; const bad = val!=null && val!=='' && +val>+t.max; const gs = t.group ? setOf(c,t) : null, gg = gs ? groupIn(gs,s.id) : null;
+        return `<td${gg?` class="gcell" style="--gc:${gColorIn(gs,gg)}" title="คะแนนกลุ่ม (${esc(gs.name)}): ${esc(gg.name)}"`:''}><input class="cell${bad?' err':''}" inputmode="decimal" autocomplete="off" aria-label="${esc(s.name)} ${esc(t.name)}" data-r="${r}" data-c="${ci}" data-t="${t.id}" value="${val??''}" placeholder="·"></td>`}).join('')}
       <td class="num b-bonus">${st.bonus? '<span class="plus">+'+fmt(st.bonus)+'</span>':'<span class="muted">–</span>'}</td>
       <td class="num total b-total">${fmt(st.total)}</td>
       <td class="num b-pct">${fmt(st.pct)}</td>
@@ -775,8 +792,18 @@ function classAvg(c,key){
 }
 /* ---------- กลุ่ม ---------- */
 const GCOL = ['#5b4bff','#0ea5e9','#16a34a','#f59e0b','#ec4899','#14b8a6','#ef4444','#8b5cf6','#84cc16','#f97316'];
-const groupOf = (c,sid) => (c.groups||[]).find(g=>g.members.includes(sid));
-const gColor = (c,g) => GCOL[Math.max(0,c.groups.indexOf(g)) % GCOL.length];
+// หลายชุดกลุ่มต่อห้อง: c.gsets = [{id, name, groups:[{id,name,members}]}] — งานกลุ่มเลือกชุดได้ (task.gset)
+function gsets(c){
+  if(!c.gsets){ c.gsets = (c.groups && c.groups.length) ? [{id:'gs'+uid(), name:'ชุดกลุ่ม 1', groups:c.groups}] : []; delete c.groups; }
+  return c.gsets;
+}
+const setById = (c,id) => gsets(c).find(x=>x.id===id);
+const setOf = (c,t) => setById(c,t.gset) || gsets(c)[0] || null;              // ชุดกลุ่มของงานนั้น
+const activeSet = c => setById(c,c.gactive) || gsets(c)[0] || null;          // ชุดที่แสดงป้ายหน้าชื่อ
+const groupIn = (gs,sid) => gs ? gs.groups.find(g=>g.members.includes(sid)) : null;
+const groupOf = (c,sid) => groupIn(activeSet(c), sid);
+const gColorIn = (gs,g) => GCOL[Math.max(0,(gs?.groups||[]).indexOf(g)) % GCOL.length];
+const gColor = (c,g) => gColorIn(activeSet(c), g);
 function groupBadge(c,sid){
   const g = groupOf(c,sid); if(!g) return '';
   const m = /^กลุ่ม\s*(\S+)$/.exec(g.name.trim()); const lab = m ? 'ก.'+m[1] : g.name.slice(0,8);
@@ -801,7 +828,7 @@ function onScoreInput(inp){
   }
   setScore(c, tid, sid, val);
   const rows = [inp.closest('tr')];
-  const g = t.group ? groupOf(c,sid) : null;
+  const g = t.group ? groupIn(setOf(c,t), sid) : null;
   if(g) g.members.forEach(m=>{
     if(m===sid) return; setScore(c, tid, m, val);
     const tr = document.querySelector(`#scoreGrid tr[data-sid="${m}"]`); if(!tr) return;
@@ -814,62 +841,86 @@ function onScoreInput(inp){
   document.getElementById('avgPct').textContent = fmt(classAvg(c,'pct'));
   save();
 }
-function joinGroup(c, sid, gid){
-  (c.groups||[]).forEach(g=>{ g.members = g.members.filter(x=>x!==sid); });
-  const g = (c.groups||[]).find(x=>x.id===gid); if(!g) return;
+function joinGroup(c, gs, sid, gid){
+  gs.groups.forEach(g=>{ g.members = g.members.filter(x=>x!==sid); });
+  const g = gs.groups.find(x=>x.id===gid); if(!g) return;
   g.members.push(sid);
-  // งานกลุ่ม: คนที่เข้ามาใหม่ได้คะแนนเท่ากับเพื่อนในกลุ่มทันที
-  c.tasks.filter(t=>t.group).forEach(t=>{
+  // งานกลุ่มที่ใช้ชุดนี้: คนที่เข้ามาใหม่ได้คะแนนเท่ากับเพื่อนในกลุ่มทันที
+  c.tasks.filter(t=>t.group && setOf(c,t)===gs).forEach(t=>{
     const mate = g.members.find(m=>m!==sid && c.scores[t.id]?.[m]!=null && c.scores[t.id][m]!=='');
     if(mate) setScore(c, t.id, sid, c.scores[t.id][mate]);
   });
 }
 function groupsDialog(){
-  const c = C(); if(!c) return; c.groups ||= [];
+  const c = C(); if(!c) return;
+  if(!gsets(c).length) c.gsets.push({id:'gs'+uid(), name:'ชุดกลุ่ม 1', groups:[]});
+  let gs = activeSet(c);
+  const G = { get groups(){ return gs.groups; }, set groups(v){ gs.groups = v; } };   // ให้โค้ดเดิมใช้ G.groups = กลุ่มของชุดที่เลือก
   const paint = () => {
-    const sts = sortedStudents(c), free = sts.filter(x=>!groupOf(c,x.id)).length, byId = new Map(c.students.map(x=>[x.id,x]));
+    c.gactive = gs.id;
+    const used = new Set(c.tasks.filter(t=>t.group && setOf(c,t)===gs).map(t=>t.name));
+    const sts = sortedStudents(c), free = sts.filter(x=>!groupIn(gs,x.id)).length, byId = new Map(c.students.map(x=>[x.id,x]));
     const top = dlg.scrollTop;
     dlgForm.innerHTML = `<h2>จัดกลุ่มนักเรียน</h2>
-      <p class="hint" style="margin-top:0">ครูเลือกเองว่าใครอยู่กลุ่มไหน หรือกดสุ่ม · งานที่ติ๊ก “คะแนนกลุ่ม” จะให้คะแนนเท่ากันทั้งกลุ่ม (ใส่ช่องของใครก็ได้ในกลุ่ม)</p>
+      <p class="hint" style="margin-top:0">สร้างได้หลายชุดกลุ่ม เช่น งานแต่ละชิ้นจับกลุ่มไม่ซ้ำกัน · ตอนเพิ่ม/แก้ไขงาน ติ๊ก “คะแนนกลุ่ม” แล้วเลือกว่าใช้ชุดไหน</p>
+      <div class="gset-tabs" role="tablist" aria-label="ชุดกลุ่ม">${gsets(c).map(x=>`<button type="button" role="tab" class="gset-tab${x===gs?' on':''}" data-gset="${x.id}" aria-selected="${x===gs}">${esc(x.name)} <small>${x.groups.length} กลุ่ม</small></button>`).join('')}
+        <button type="button" class="gset-tab add" id="gs_new">＋ ชุดกลุ่มใหม่</button></div>
+      <div class="gset-bar"><label class="sr" for="gs_name">ชื่อชุดกลุ่ม</label><input class="ctl" id="gs_name" maxlength="40" value="${esc(gs.name)}" aria-label="ชื่อชุดกลุ่ม">
+        <span class="hint">${used.size?`ใช้กับงาน: ${[...used].map(esc).join(', ')}`:'ยังไม่มีงานที่ใช้ชุดนี้'}</span>
+        <span class="grow"></span>
+        <button type="button" class="btn sm" id="gs_copy">⧉ คัดลอกชุดนี้</button>
+        <button type="button" class="btn sm danger" id="gs_del" ${gsets(c).length>1?'':'disabled'}>ลบชุดนี้</button></div>
       <div class="grp-bar">
         <div class="grp-rand"><label class="sr" for="g_mode">แบบการสุ่ม</label>
           <select class="ctl" id="g_mode"><option value="k">แบ่งเป็น (จำนวนกลุ่ม)</option><option value="m">กลุ่มละ (จำนวนคน)</option></select>
           <label class="sr" for="g_n">จำนวน</label><input class="ctl" id="g_n" type="number" min="1" max="${sts.length}" value="${Math.max(2,Math.round(sts.length/4))}">
           <button type="button" class="btn pri" id="g_rand">🎲 สุ่มแบ่งกลุ่ม</button></div>
         <div class="grp-acts"><button type="button" class="btn sm" id="g_add">＋ เพิ่มกลุ่ม</button>
-          <button type="button" class="btn sm danger" id="g_clear" ${c.groups.length?'':'disabled'}>ล้างกลุ่มทั้งหมด</button></div></div>
-      <div class="grp-cards">${c.groups.map(g=>`<div class="grp-card" style="--gc:${gColor(c,g)}">
+          <button type="button" class="btn sm danger" id="g_clear" ${G.groups.length?'':'disabled'}>ล้างกลุ่มทั้งหมด</button></div></div>
+      <div class="grp-cards">${G.groups.map(g=>`<div class="grp-card" style="--gc:${gColorIn(gs,g)}">
         <div class="grp-h"><input class="ctl" data-gname="${g.id}" value="${esc(g.name)}" maxlength="30" aria-label="ชื่อกลุ่ม"><span class="chip">${g.members.length} คน</span>
           <button type="button" class="btn sm ghost danger" data-delg="${g.id}" aria-label="ลบกลุ่ม ${esc(g.name)}">✕</button></div>
         <div class="grp-m">${g.members.length ? g.members.map(m=>byId.get(m)).filter(Boolean).sort((a,b)=>(+a.no||9999)-(+b.no||9999)).map(x=>`<button type="button" class="mchip" data-rm="${x.id}" title="เอาออกจากกลุ่ม">${esc(x.no)}. ${esc(x.name)} ✕</button>`).join('') : '<span class="hint">ยังไม่มีสมาชิก — เลือกกลุ่มให้นักเรียนด้านล่าง</span>'}</div></div>`).join('') || '<p class="hint">ยังไม่มีกลุ่ม กด “สุ่มแบ่งกลุ่ม” หรือ “เพิ่มกลุ่ม”</p>'}</div>
       <h3 style="margin-top:14px">ใครอยู่กลุ่มไหน <span class="hint">· ยังไม่มีกลุ่ม ${free} คน</span></h3>
-      <div class="grp-list">${sts.map(x=>{ const g=groupOf(c,x.id); return `<div class="grp-row"><span class="no">${esc(x.no)}</span><span class="nm">${esc(x.name)}</span>
-        <select class="ctl" data-assign="${x.id}" ${g?`style="--gc:${gColor(c,g)}" data-in="1"`:''} aria-label="กลุ่มของ ${esc(x.name)}"><option value="">— ไม่มีกลุ่ม —</option>${c.groups.map(h=>`<option value="${h.id}" ${g&&g.id===h.id?'selected':''}>${esc(h.name)}</option>`).join('')}</select></div>`; }).join('')}</div>
+      <div class="grp-list">${sts.map(x=>{ const g=groupIn(gs,x.id); return `<div class="grp-row"><span class="no">${esc(x.no)}</span><span class="nm">${esc(x.name)}</span>
+        <select class="ctl" data-assign="${x.id}" ${g?`style="--gc:${gColorIn(gs,g)}" data-in="1"`:''} aria-label="กลุ่มของ ${esc(x.name)}"><option value="">— ไม่มีกลุ่ม —</option>${G.groups.map(h=>`<option value="${h.id}" ${g&&g.id===h.id?'selected':''}>${esc(h.name)}</option>`).join('')}</select></div>`; }).join('')}</div>
       <div class="dlg-foot"><button type="button" class="btn pri" data-close>เสร็จ</button></div>`;
     dlg.scrollTop = top;
   };
   const changed = () => { save(); render(); paint(); };
-  const snap = () => JSON.stringify(c.groups);
-  const undoTo = js => () => { c.groups = JSON.parse(js); save(); render(); if(dlg.open) paint(); };
+  const snap = () => JSON.stringify(G.groups);
+  const undoTo = js => { const keep = gs; return () => { keep.groups = JSON.parse(js); save(); render(); if(dlg.open) paint(); }; };
   openDialog('', ()=>false, true); dlg.classList.add('xwide'); paint();
   dlgForm.onchange = e => {
-    const a = e.target.closest('[data-assign]'); if(a){ joinGroup(c, a.dataset.assign, a.value); changed(); return; }
-    const n = e.target.closest('[data-gname]'); if(n){ const g=c.groups.find(x=>x.id===n.dataset.gname); if(g){ g.name = n.value.trim() || g.name; changed(); } }
+    const a = e.target.closest('[data-assign]'); if(a){ joinGroup(c, gs, a.dataset.assign, a.value); changed(); return; }
+    if(e.target.id==='gs_name'){ gs.name = e.target.value.trim() || gs.name; changed(); return; }
+    const n = e.target.closest('[data-gname]'); if(n){ const g=G.groups.find(x=>x.id===n.dataset.gname); if(g){ g.name = n.value.trim() || g.name; changed(); } }
   };
   dlgForm.onclick = e => {
     if(e.target.closest('[data-close]')){ return; }
-    const rm = e.target.closest('[data-rm]'); if(rm){ c.groups.forEach(g=>{ g.members = g.members.filter(x=>x!==rm.dataset.rm); }); changed(); return; }
-    const dg = e.target.closest('[data-delg]'); if(dg){ const before=snap(); c.groups = c.groups.filter(g=>g.id!==dg.dataset.delg); changed(); toast('ลบกลุ่มแล้ว', undoTo(before)); return; }
-    if(e.target.id==='g_add'){ const used = new Set(c.groups.map(g=>g.name)); let i=c.groups.length+1; while(used.has('กลุ่ม '+i)) i++; c.groups.push({id:uid(), name:'กลุ่ม '+i, members:[]}); changed(); return; }
-    if(e.target.id==='g_clear'){ const before=snap(); c.groups = []; changed(); toast('ล้างกลุ่มทั้งหมดแล้ว', undoTo(before)); return; }
+    const tab = e.target.closest('[data-gset]'); if(tab){ gs = setById(c, tab.dataset.gset) || gs; changed(); return; }
+    if(e.target.id==='gs_new'){ const n = gsets(c).length+1; gs = {id:'gs'+uid(), name:'ชุดกลุ่ม '+n, groups:[]}; c.gsets.push(gs); changed(); toast('สร้าง “'+gs.name+'” แล้ว — กดสุ่มแบ่งกลุ่มหรือเลือกเองได้เลย'); return; }
+    if(e.target.id==='gs_copy'){ const cp = JSON.parse(JSON.stringify(gs)); cp.id='gs'+uid(); cp.name = gs.name+' (สำเนา)'; cp.groups.forEach(g=>g.id=uid()); c.gsets.push(cp); gs = cp; changed(); return; }
+    if(e.target.id==='gs_del'){
+      if(gsets(c).length<2) return;
+      const users = c.tasks.filter(t=>t.group && setOf(c,t)===gs);
+      if(!confirm(`ลบ “${gs.name}”?${users.length?`\nงานที่ใช้ชุดนี้ (${users.map(t=>t.name).join(', ')}) จะย้ายไปใช้ชุดแรกแทน (คะแนนที่กรอกแล้วยังอยู่)`:''}`)) return;
+      const before = JSON.stringify(c.gsets), gone = gs;
+      c.gsets = c.gsets.filter(x=>x!==gone); users.forEach(t=>delete t.gset); gs = c.gsets[0];
+      changed(); toast('ลบชุดกลุ่มแล้ว', ()=>{ c.gsets = JSON.parse(before); save(); render(); }); return;
+    }
+    const rm = e.target.closest('[data-rm]'); if(rm){ G.groups.forEach(g=>{ g.members = g.members.filter(x=>x!==rm.dataset.rm); }); changed(); return; }
+    const dg = e.target.closest('[data-delg]'); if(dg){ const before=snap(); G.groups = G.groups.filter(g=>g.id!==dg.dataset.delg); changed(); toast('ลบกลุ่มแล้ว', undoTo(before)); return; }
+    if(e.target.id==='g_add'){ const used = new Set(G.groups.map(g=>g.name)); let i=G.groups.length+1; while(used.has('กลุ่ม '+i)) i++; G.groups.push({id:uid(), name:'กลุ่ม '+i, members:[]}); changed(); return; }
+    if(e.target.id==='g_clear'){ const before=snap(); G.groups = []; changed(); toast('ล้างกลุ่มทั้งหมดแล้ว', undoTo(before)); return; }
     if(e.target.id==='g_rand'){
       const N = c.students.length; if(!N) return;
       const num = Math.max(1, Math.floor(+document.getElementById('g_n').value || 1));
       const k = Math.min(N, document.getElementById('g_mode').value==='m' ? Math.ceil(N/num) : num);
       const before = snap(), ids = c.students.map(x=>x.id);
       for(let i=ids.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [ids[i],ids[j]]=[ids[j],ids[i]]; }
-      c.groups = Array.from({length:k}, (_,i)=>({id:uid(), name:'กลุ่ม '+(i+1), members:[]}));
-      ids.forEach((id,i)=>c.groups[i%k].members.push(id));
+      G.groups = Array.from({length:k}, (_,i)=>({id:uid(), name:'กลุ่ม '+(i+1), members:[]}));
+      ids.forEach((id,i)=>G.groups[i%k].members.push(id));
       changed(); toast(`สุ่มแบ่งเป็น ${k} กลุ่มแล้ว`, undoTo(before));
     }
   };
@@ -891,6 +942,8 @@ function taskDialog(task){
     <div class="field"><label for="f_max">คะแนนเต็ม</label><input class="ctl" id="f_max" type="number" min="0.5" step="0.5" required value="${task.max}"></div>
     <div class="field"><label for="f_cat">ประเภท</label><select class="ctl" id="f_cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${k===task.cat?'selected':''}>${v.name}</option>`).join('')}</select></div>
     <label class="field-chk"><input type="checkbox" id="f_group" ${task.group?'checked':''}> <span><b>คะแนนกลุ่ม</b> — ทุกคนในกลุ่มได้คะแนนเท่ากัน (ใส่ช่องของใครก็ได้ในกลุ่ม)<br><span class="hint">กำหนดว่าใครอยู่กลุ่มไหนที่ปุ่ม “จัดกลุ่ม” ในหน้าคะแนน</span></span></label>
+    <div class="field" id="f_gsetBox" ${task.group?'':'hidden'}><label for="f_gset">ใช้ชุดกลุ่ม</label>
+      ${gsets(c).length ? `<select class="ctl" id="f_gset">${gsets(c).map(x=>`<option value="${x.id}" ${x===setOf(c,task)?'selected':''}>${esc(x.name)} (${x.groups.length} กลุ่ม)</option>`).join('')}</select>` : '<p class="hint" style="margin:0">ยังไม่มีชุดกลุ่ม — บันทึกงานนี้แล้วกด “👥 จัดกลุ่ม” เพื่อสร้าง</p>'}</div>
     ${isNew?'':'<p style="margin:0 0 12px"><button type="button" class="btn sm" id="fillMax">✨ ใส่คะแนนเต็มให้คนที่ยังว่าง</button></p>'}
     <div class="dlg-foot">${isNew?'':'<button type="button" class="btn danger left" id="delTask">ลบงานนี้</button>'}
       <button type="button" class="btn" value="cancel" data-close>ยกเลิก</button><button class="btn pri" value="ok">บันทึก</button></div>`,
@@ -898,12 +951,14 @@ function taskDialog(task){
       const name=f.f_name.value.trim(), max=+f.f_max.value;
       if(!name || !(max>0)) return false;
       const grp = !!document.getElementById('f_group').checked;
-      if(isNew){ c.tasks.push({id:uid(), name, max, cat:f.f_cat.value, group:grp}); }
-      else Object.assign(c.tasks.find(t=>t.id===task.id), {name, max, cat:f.f_cat.value, group:grp});
+      const gset = grp ? (document.getElementById('f_gset')?.value || undefined) : undefined;
+      if(isNew){ c.tasks.push({id:uid(), name, max, cat:f.f_cat.value, group:grp, ...(gset?{gset}:{})}); }
+      else { const t = c.tasks.find(t=>t.id===task.id); Object.assign(t, {name, max, cat:f.f_cat.value, group:grp}); if(gset) t.gset = gset; else delete t.gset; }
       save(); render();
       if(isNew) setTimeout(()=>{ const ci=c.tasks.length-1; const el=document.querySelector(`#scoreGrid .cell[data-r="0"][data-c="${ci}"]`); el?.focus(); el?.scrollIntoView({block:'nearest',inline:'center'}); },30);
     });
   document.getElementById('f_name').select();
+  document.getElementById('f_group').addEventListener('change', e=>{ document.getElementById('f_gsetBox').hidden = !e.target.checked; });
   document.getElementById('fillMax')?.addEventListener('click', ()=>{
     const sc = (c.scores[task.id] ||= {}); const filled = [];
     c.students.forEach(s=>{ if(sc[s.id]==null || sc[s.id]===''){ sc[s.id] = +task.max; filled.push(s.id); } });
@@ -978,6 +1033,7 @@ function viewBonus(v, c){
     </div>
     <div class="grow"></div>
     <button class="btn" data-allpts="1" title="ให้ +1 กับทุกคนที่แสดงอยู่">+1 ทั้งห้อง</button>
+    <button class="btn" data-act="randGroup">🎲 สุ่มกลุ่ม</button>
     <button class="btn pri" data-act="random">🎲 สุ่มชื่อ</button>
   </div>
   <div class="bonus-layout">
@@ -1137,30 +1193,118 @@ function studentDialog(sid){
 }
 
 /* ================= random picker ================= */
+// จำว่าใคร/กลุ่มไหนถูกสุ่มไปแล้ว (แยกตามห้อง/ชุดกลุ่ม · เริ่มใหม่อัตโนมัติเมื่อขึ้นวันใหม่)
+const RAND_KEY = 'scorebook.rand';
+function randMem(key){
+  let all = {}; try{ all = JSON.parse(localStorage.getItem(RAND_KEY)) || {}; }catch(e){}
+  const m = all[key]; return (m && m.date === today()) ? new Set(m.ids) : new Set();
+}
+function randSave(key, set){
+  let all = {}; try{ all = JSON.parse(localStorage.getItem(RAND_KEY)) || {}; }catch(e){}
+  for(const k in all) if(all[k].date !== today()) delete all[k];
+  if(set.size) all[key] = {date: today(), ids: [...set]}; else delete all[key];
+  try{ localStorage.setItem(RAND_KEY, JSON.stringify(all)); }catch(e){}
+}
+// กล่องสุ่มกลาง ใช้ทั้งสุ่มชื่อและสุ่มกลุ่ม
+function spinner(items, label, onWin){
+  const box=document.getElementById('randBox'), nameEl=document.getElementById('randName'), sub=document.getElementById('randSub');
+  let last=null, n=0; const total = calm() ? 1 : 16+Math.floor(Math.random()*8);
+  box.classList.remove('win');
+  const tick = ()=>{
+    let pick; do { pick = items[Math.floor(Math.random()*items.length)]; } while(items.length>1 && pick===last);
+    last = pick; const [a,b] = label(pick); nameEl.textContent = a; sub.textContent = b; n++;
+    if(n<total) setTimeout(tick, 45 + n*n*0.9);
+    else { box.classList.add('win'); confetti(box); onWin(pick); }
+  };
+  tick();
+}
 function randomDialog(){
   const c = C(); if(!c) return;
   const day = c.attendance[today()] || {};
-  const pool = sortedStudents(c).filter(s => s.name && !['A','L'].includes(day[s.id]));
-  if(!pool.length){ toast('ยังไม่มีนักเรียนให้สุ่ม'); return; }
+  const all = sortedStudents(c).filter(s => s.name && !['A','L'].includes(day[s.id]));
+  if(!all.length){ toast('ยังไม่มีนักเรียนให้สุ่ม'); return; }
+  const key = 'stu:' + c.id;
+  let done = randMem(key), picked = null;
+  let noRepeat = (()=>{ try{ return localStorage.getItem('scorebook.randNoRepeat') !== '0'; }catch(e){ return true; } })();
+  const pool = () => noRepeat ? all.filter(s=>!done.has(s.id)) : all;
   openDialog(`<h2>🎲 สุ่มชื่อนักเรียน</h2>
-    <div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub">${pool.length} คน (ไม่รวมคนที่ขาด/ลาวันนี้)</div></div>
-    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 คะแนน</button><button type="button" class="btn pri" id="randGo">สุ่มเลย</button></div>`,
+    <div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub"></div></div>
+    <label class="field-chk rand-opt"><input type="checkbox" id="randNoRep" ${noRepeat?'checked':''}> <span><b>ตัดคนที่ถูกสุ่มแล้วออก</b> — ไม่ให้ชื่อซ้ำจนกว่าจะครบทุกคน</span></label>
+    <div class="rand-done" id="randDone"></div>
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button><button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 คะแนน</button><button type="button" class="btn pri" id="randGo">สุ่มเลย</button></div>`,
     ()=>false);
-  const box=document.getElementById('randBox'), nameEl=document.getElementById('randName'), sub=document.getElementById('randSub');
-  const go=document.getElementById('randGo'), give=document.getElementById('randGive');
-  let picked=null, last=null;
+  const go=document.getElementById('randGo'), give=document.getElementById('randGive'), reset=document.getElementById('randReset');
+  const info = () => {
+    const left = pool().length;
+    document.getElementById('randSub').textContent = picked ? 'เลขที่ ' + picked.no : (noRepeat ? `เหลือ ${left} จาก ${all.length} คน` : `${all.length} คน`) + ' (ไม่รวมคนที่ขาด/ลาวันนี้)';
+    const list = all.filter(s=>done.has(s.id));
+    document.getElementById('randDone').innerHTML = noRepeat && list.length ? `<div class="hint">ถูกสุ่มแล้ว ${list.length} คน (แตะชื่อเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(s=>`<button type="button" class="mchip" data-back="${s.id}">${esc(s.no)}. ${esc(s.name)} ↩</button>`).join('')}</div>` : '';
+    reset.disabled = !done.size;
+    if(noRepeat && !left){ go.disabled = true; go.textContent = 'สุ่มครบทุกคนแล้ว'; } else { go.disabled = false; if(go.textContent==='สุ่มครบทุกคนแล้ว') go.textContent = 'สุ่มเลย'; }
+  };
+  info();
   go.addEventListener('click', ()=>{
-    go.disabled = give.disabled = true; box.classList.remove('win');
-    let n=0; const total = calm() ? 1 : 16+Math.floor(Math.random()*8);
-    const tick = ()=>{
-      do { picked = pool[Math.floor(Math.random()*pool.length)]; } while(pool.length>1 && picked===last);
-      last = picked; nameEl.textContent = picked.name; sub.textContent = 'เลขที่ ' + picked.no; n++;
-      if(n<total) setTimeout(tick, 45 + n*n*0.9);
-      else { box.classList.add('win'); confetti(box); go.disabled = give.disabled = false; go.textContent='สุ่มอีกครั้ง'; }
-    };
-    tick();
+    const items = pool(); if(!items.length) return;
+    go.disabled = give.disabled = true; picked = null;
+    spinner(items, s=>[s.name, 'เลขที่ ' + s.no], s=>{
+      picked = s; if(noRepeat){ done.add(s.id); randSave(key, done); }
+      give.disabled = false; go.textContent = 'สุ่มอีกครั้ง'; info();
+    });
   });
+  document.getElementById('randNoRep').addEventListener('change', e=>{ noRepeat = e.target.checked; try{ localStorage.setItem('scorebook.randNoRepeat', noRepeat?'1':'0'); }catch(_){} picked=null; info(); });
+  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; document.getElementById('randName').textContent = 'พร้อมไหม?'; info(); });
+  document.getElementById('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b) return; done.delete(b.dataset.back); randSave(key, done); info(); });
   give.addEventListener('click', ()=>{ if(picked){ closeDialog(); addBonus(picked.id, 1, 'สุ่มตอบคำถาม'); } });
+}
+
+// สุ่มกลุ่ม: ให้กลุ่มที่ถูกสุ่มตอบคำถาม/แสดงความคิดเห็น
+function randomGroupDialog(){
+  const c = C(); if(!c) return;
+  const sets = gsets(c).filter(x=>x.groups.some(g=>g.members.length));
+  if(!sets.length){ toast('ยังไม่มีกลุ่ม — กด “👥 จัดกลุ่ม” เพื่อแบ่งกลุ่มก่อน'); return; }
+  let gs = sets.includes(activeSet(c)) ? activeSet(c) : sets[0];
+  let key = 'grp:' + c.id + ':' + gs.id, done = randMem(key), picked = null;
+  const byId = new Map(c.students.map(x=>[x.id,x]));
+  const groups = () => gs.groups.filter(g=>g.members.length);
+  const pool = () => groups().filter(g=>!done.has(g.id));
+  const who = g => g.members.map(m=>byId.get(m)).filter(Boolean).sort((a,b)=>(+a.no||9999)-(+b.no||9999));
+  openDialog(`<h2>🎲 สุ่มกลุ่มตอบคำถาม / แสดงความคิดเห็น</h2>
+    ${sets.length>1?`<div class="field"><label for="rg_set">ชุดกลุ่ม</label><select class="ctl" id="rg_set">${sets.map(x=>`<option value="${x.id}" ${x===gs?'selected':''}>${esc(x.name)} (${x.groups.length} กลุ่ม)</option>`).join('')}</select></div>`:''}
+    <div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub"></div></div>
+    <div class="rand-members" id="rgMembers"></div>
+    <div class="rand-done" id="randDone"></div>
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button><button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 ทั้งกลุ่ม</button><button type="button" class="btn pri" id="randGo">สุ่มกลุ่ม</button></div>`,
+    ()=>false);
+  const go=document.getElementById('randGo'), give=document.getElementById('randGive'), reset=document.getElementById('randReset');
+  const info = () => {
+    const left = pool().length, total = groups().length;
+    if(!picked) document.getElementById('randSub').textContent = `เหลือ ${left} จาก ${total} กลุ่ม · กลุ่มที่ถูกสุ่มแล้วจะไม่ถูกสุ่มซ้ำ`;
+    document.getElementById('rgMembers').innerHTML = picked ? `<div class="rand-chips">${who(picked).map(s=>`<span class="mchip" style="cursor:default">${esc(s.no)}. ${esc(s.name)}</span>`).join('')}</div>` : '';
+    const list = groups().filter(g=>done.has(g.id));
+    document.getElementById('randDone').innerHTML = list.length ? `<div class="hint">ถูกสุ่มแล้ว (แตะเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(g=>`<button type="button" class="mchip" data-back="${g.id}" style="border-color:${gColorIn(gs,g)}">${esc(g.name)} ↩</button>`).join('')}</div>` : '';
+    reset.disabled = !done.size;
+    if(!left){ go.disabled = true; go.textContent = 'ครบทุกกลุ่มแล้ว'; } else { go.disabled = false; if(go.textContent==='ครบทุกกลุ่มแล้ว') go.textContent = 'สุ่มกลุ่ม'; }
+  };
+  info();
+  go.addEventListener('click', ()=>{
+    const items = pool(); if(!items.length) return;
+    go.disabled = give.disabled = true; picked = null; document.getElementById('rgMembers').innerHTML = '';
+    spinner(items, g=>[g.name, `${g.members.length} คน`], g=>{
+      picked = g; done.add(g.id); randSave(key, done);
+      document.getElementById('randSub').textContent = `${g.members.length} คน · ตอบคำถาม / แสดงความคิดเห็น`;
+      give.disabled = false; go.textContent = 'สุ่มกลุ่มต่อไป'; info();
+    });
+  });
+  document.getElementById('rg_set')?.addEventListener('change', e=>{ gs = setById(c, e.target.value) || gs; key = 'grp:' + c.id + ':' + gs.id; done = randMem(key); picked = null; document.getElementById('randName').textContent = 'พร้อมไหม?'; give.disabled = true; info(); });
+  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; document.getElementById('randName').textContent = 'พร้อมไหม?'; give.disabled = true; info(); });
+  document.getElementById('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b) return; done.delete(b.dataset.back); randSave(key, done); info(); });
+  give.addEventListener('click', ()=>{
+    if(!picked) return;
+    const ids = new Set(), ts = Date.now();
+    picked.members.forEach((sid,i)=>{ const b={id:uid(), sid, pts:1, reason:'สุ่มกลุ่มตอบคำถาม ('+picked.name+')', date:today(), ts:ts+i}; ids.add(b.id); c.bonus.push(b); });
+    closeDialog(); save(); render();
+    toast(`+1 คะแนน ให้ ${picked.name} (${picked.members.length} คน)`, ()=>{ c.bonus = c.bonus.filter(b=>!ids.has(b.id)); save(); render(); });
+  });
 }
 function bonusAll(pts){
   const c = C(); const list = visibleStudents(c); if(!list.length) return;
@@ -1738,7 +1882,8 @@ document.addEventListener('click', e=>{
     case 'newClass': classDialog(false); break;
     case 'editClass': if(c) classDialog(true); break;
     case 'demo': demo(); animateView(); break;
-    case 'random': randomDialog(); break;
+    case 'random': closeMenu(); randomDialog(); break;
+    case 'randGroup': closeMenu(); randomGroupDialog(); break;
     case 'renumber': renumberDo(false); break;
     case 'renumberAll': closeMenu(); renumberDo(true); break;
     case 'groups': closeMenu(); groupsDialog(); break;
