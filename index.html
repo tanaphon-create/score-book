@@ -673,8 +673,23 @@ const noStudents = () => `<div class="card empty"><div class="big" aria-hidden="
   <div class="row"><button class="btn pri" data-goto="stu">ไปที่หน้าเพิ่มนักเรียน</button></div></div>`;
 
 /* ================= scores ================= */
+/* เรียงงานตามเลขในชื่อ (ใบงาน 1, 2, 10…) จากน้อยไปมาก — งานที่ไม่มีเลข (เช่น กลางภาค) คงตำแหน่งเดิม */
+const THAI_DIGITS = {'๐':0,'๑':1,'๒':2,'๓':3,'๔':4,'๕':5,'๖':6,'๗':7,'๘':8,'๙':9};
+function taskNo(name){
+  const m = String(name).replace(/[๐-๙]/g, d=>THAI_DIGITS[d]).match(/\d+(?:\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+function sortTasksByNumber(c){
+  const slots = [], items = [];
+  c.tasks.forEach((t,i)=>{ const n = taskNo(t.name); if(n!=null){ slots.push(i); items.push({t, n, i}); } });
+  items.sort((a,b)=>a.n-b.n || a.i-b.i);
+  let changed = false;
+  slots.forEach((pos,k)=>{ if(c.tasks[pos]!==items[k].t){ c.tasks[pos] = items[k].t; changed = true; } });
+  return changed;
+}
 function viewScores(v, c){
   if(!c.students.length){ v.innerHTML = noStudents(); return; }
+  if(sortTasksByNumber(c)) save();
   const list = visibleStudents(c);
   const max = maxTotal(c);
   v.innerHTML = `
