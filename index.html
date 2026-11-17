@@ -254,7 +254,8 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px
 .empty .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
 /* ---------- dialog / menu / toast ---------- */
-dialog{border:1px solid var(--line);border-radius:22px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 30px 80px -10px rgba(0,0,20,.45);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
+dialog{border:1px solid var(--line);border-radius:22px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 30px 80px -10px rgba(0,0,20,.45);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 40px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+dialog:not([open]){display:none!important}
 dialog.wide{width:min(560px,calc(100vw - 32px))}
 /* กลุ่ม */
 .nm-row{display:flex;align-items:center;gap:6px;min-width:0}
@@ -368,6 +369,48 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
   .tbl-wrap{max-height:none;overflow:visible}
   .card{box-shadow:none;backdrop-filter:none;background:#fff}
 }
+/* ---------- แผงตั้งค่า (แทนเมนู ⋯) ---------- */
+.set-btn{gap:6px;white-space:nowrap;font-weight:600}
+.set-btn .set-ic{font-size:17px;line-height:1;display:inline-block;transition:transform .4s var(--ease)}
+.set-btn:hover .set-ic,.set-btn[aria-expanded="true"] .set-ic{transform:rotate(90deg)}
+html.sheet-lock,html.sheet-lock body{overflow:hidden}
+.sheet-bg{position:fixed;inset:0;z-index:90;background:rgba(8,10,25,.42);opacity:0;transition:opacity .25s ease}
+.sheet-bg.open{opacity:1}
+.sheet{position:fixed;z-index:91;top:0;right:0;bottom:0;width:min(400px,100vw);display:flex;flex-direction:column;background:var(--surface);color:var(--text);
+  border-left:1px solid var(--line);box-shadow:-20px 0 60px -20px rgba(20,16,60,.35);transform:translateX(104%);transition:transform .28s var(--ease)}
+.sheet.open{transform:none}
+.sheet-grab{display:none}
+.sheet-head{display:flex;align-items:center;gap:10px;padding:calc(14px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--line)}
+.sheet-head h2{margin:0;font-size:18px}
+.sheet-head small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.sheet-ghost{width:42px;height:42px;flex:none}
+.sheet-x{margin-left:auto;flex:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:16px;cursor:pointer}
+.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;padding:6px 14px calc(18px + env(safe-area-inset-bottom))}
+.sheet-body section{margin-top:12px}
+.sheet-body h3{margin:0 0 8px 2px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.2px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sgrid button,.sgrid .sbtn{display:flex;align-items:center;gap:10px;min-height:56px;padding:9px 10px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);
+  font:inherit;font-size:13.5px;font-weight:600;line-height:1.3;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .15s,border-color .15s,transform .12s}
+.sgrid button:hover,.sgrid .sbtn:hover{background:var(--brand-soft);border-color:color-mix(in srgb,var(--brand) 35%,var(--line))}
+.sgrid button:active,.sgrid .sbtn:active{transform:scale(.97)}
+.sgrid button:focus-visible,.sgrid .sbtn:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 45%,transparent);outline-offset:1px}
+.sgrid b{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;font-weight:700;background:var(--surface-2)}
+.sgrid span{min-width:0}
+.sgrid small{display:block;font-weight:400;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.sgrid .danger{color:var(--bad)}
+.sgrid .danger b{background:var(--bad-soft)}
+.danger-zone{padding-top:12px;border-top:1px dashed var(--line)}
+@media (max-width:700px){
+  .set-btn{flex:none;width:40px;height:40px;min-height:40px;padding:0;justify-content:center;border-radius:12px}
+  .set-btn .set-t{display:none}
+  .sheet{top:auto;left:0;width:100%;max-height:min(88dvh,calc(100dvh - 40px));border-left:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 60px -20px rgba(20,16,60,.4);transform:translateY(104%)}
+  .sheet.open{transform:none}
+  .sheet-grab{display:block;width:44px;height:5px;border-radius:9px;background:var(--line);margin:8px auto 0;flex:none}
+  .sheet-grab::after{content:"";display:block;height:24px;margin-top:-10px}
+  .sheet-head{padding-top:8px}
+}
+@media (max-width:360px){ .sgrid{grid-template-columns:1fr} }
+@media print{ .sheet,.sheet-bg{display:none!important} }
 /* ---------- ชุดกลุ่ม / สุ่ม ---------- */
 .gset-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
 .gset-tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit;font-size:14px;font-weight:600;color:inherit}
@@ -438,6 +481,7 @@ nav.tabs button:hover{color:var(--tc)}
 @media (max-width:700px){
   nav.tabs button[aria-selected="true"]{background:color-mix(in srgb,var(--tc) 13%,var(--surface));color:var(--tc);box-shadow:none}
   .home-link{width:34px;height:34px;border-radius:11px;font-size:15px}
+  header.top .logo{display:none}
 }
 </style>
 </head>
@@ -460,36 +504,7 @@ nav.tabs button:hover{color:var(--tc)}
     <div class="class-pick" id="classPick"></div>
     <a class="btn quiz-btn" href="../quiz-live/host.html" target="_blank" rel="noopener" title="เปิดเกมคำถามฟลุ๊กถูก (จอครู)"><span aria-hidden="true">🎮</span><span class="qb-t">เกมคำถาม</span></a>
     <button class="saved" id="saved" data-act="connect" aria-live="polite" title="ตั้งค่าการเชื่อมต่อ Google Sheet"><i></i>บันทึกอัตโนมัติ</button>
-    <div class="menu">
-      <button class="btn icon-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-label="เมนูเพิ่มเติม">⋯</button>
-      <div class="menu-pop" id="menuPop" role="menu">
-        <button data-act="quiz" role="menuitem">🎮 เกมคำถามฟลุ๊กถูก (จอครู)</button>
-        <button data-act="live" role="menuitem">🖥 โหมดห้องเรียน (กดแข่ง · สุ่ม · ความคิดเห็น)</button>
-        <hr>
-        <button data-act="newClass" role="menuitem">＋ เพิ่มห้องเรียน</button>
-        <button data-act="editClass" role="menuitem">✎ แก้ไขชื่อห้อง/วิชา</button>
-        <hr>
-        <button data-act="renumberAll" role="menuitem">🔢 จัดเลขที่ใหม่ทุกห้อง (ไม่เว้น)</button>
-        <button data-act="groups" role="menuitem">👥 จัดกลุ่มนักเรียน</button>
-        <button data-act="random" role="menuitem">🎲 สุ่มชื่อนักเรียน</button>
-        <button data-act="randGroup" role="menuitem">🎲 สุ่มกลุ่มตอบคำถาม</button>
-        <hr>
-        <button data-act="img" role="menuitem">🖼 ส่งออกสรุปเป็นรูปภาพ (PNG)</button>
-        <button data-act="xlsx" role="menuitem">⬇ ส่งออก Excel / Google Sheet (.xlsx)</button>
-        <button data-act="csv" role="menuitem">⬇ ส่งออกแบบ CSV</button>
-        <button data-act="backup" role="menuitem">💾 สำรองข้อมูลทั้งหมด (.json)</button>
-        <label role="menuitem">📂 กู้คืนจากไฟล์สำรอง<input type="file" accept=".json,application/json" id="restoreFile" hidden></label>
-        <button data-act="print" role="menuitem">🖨 พิมพ์หน้านี้</button>
-        <hr>
-        <button data-act="connect" role="menuitem">🔄 ซิงก์กับ Google Sheet ตอนนี้</button>
-        <button data-act="openSheet" role="menuitem">📊 เปิด Google Sheet</button>
-        <button data-act="studentPage" role="menuitem">🔎 หน้านักเรียนดูคะแนน</button>
-        <button data-act="theme" role="menuitem">◐ สลับโหมดมืด/สว่าง</button>
-        <button data-act="delClass" role="menuitem" class="danger" style="color:var(--bad)">🗑 ลบห้องนี้</button>
-        <hr>
-        <button data-act="logout" role="menuitem" id="logoutItem">🚪 ออกจากระบบ</button>
-      </div>
-    </div>
+    <button class="btn set-btn" id="menuBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="menuPop" title="ตั้งค่าและเครื่องมือ"><span class="set-ic" aria-hidden="true">⚙️</span><span class="set-t">ตั้งค่า</span></button>
   </div>
   <nav class="tabs" role="tablist" id="tabs" aria-label="ส่วนของสมุดคะแนน">
     <button role="tab" data-tab="scores"><b aria-hidden="true">📝</b><span>คะแนน</span></button>
@@ -499,6 +514,49 @@ nav.tabs button:hover{color:var(--tc)}
     <button role="tab" data-tab="stu"><b aria-hidden="true">👥</b><span>นักเรียน</span></button>
   </nav>
 </header>
+<div class="sheet-bg" id="menuBg" hidden></div>
+<aside class="sheet" id="menuPop" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-grab" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <img src="../quiz-live/img/ghost.svg" alt="" class="sheet-ghost">
+    <div><h2 id="sheetTitle">ตั้งค่าและเครื่องมือ</h2><small id="sheetUser">สมุดคะแนน · Ghost Class</small></div>
+    <button class="sheet-x" id="menuClose" aria-label="ปิด">✕</button>
+  </div>
+  <div class="sheet-body">
+    <section><h3>🎮 สอนสนุก</h3><div class="sgrid">
+      <button data-act="quiz"><b>🎮</b><span>เกมคำถามฟลุ๊กถูก<small>เปิดจอครู</small></span></button>
+      <button data-act="live"><b>🖥</b><span>โหมดห้องเรียน<small>กดแข่ง · สุ่ม · ความคิดเห็น</small></span></button>
+      <button data-act="random"><b>🎲</b><span>สุ่มชื่อนักเรียน</span></button>
+      <button data-act="randGroup"><b>🎯</b><span>สุ่มกลุ่มตอบคำถาม</span></button>
+      <button data-act="groups"><b>👥</b><span>จัดกลุ่มนักเรียน</span></button>
+    </div></section>
+    <section><h3>🏫 ห้องเรียน</h3><div class="sgrid">
+      <button data-act="newClass"><b>＋</b><span>เพิ่มห้องเรียน</span></button>
+      <button data-act="editClass"><b>✎</b><span>แก้ไขชื่อห้อง/วิชา</span></button>
+      <button data-act="renumberAll"><b>🔢</b><span>จัดเลขที่ใหม่ทุกห้อง<small>ไม่เว้นเลข</small></span></button>
+    </div></section>
+    <section><h3>☁️ Google Sheet</h3><div class="sgrid">
+      <button data-act="connect"><b>🔄</b><span>ซิงก์ตอนนี้</span></button>
+      <button data-act="openSheet"><b>📊</b><span>เปิด Google Sheet</span></button>
+      <button data-act="studentPage"><b>🔎</b><span>หน้านักเรียนดูคะแนน</span></button>
+    </div></section>
+    <section><h3>📤 ส่งออก · สำรองข้อมูล</h3><div class="sgrid">
+      <button data-act="img"><b>🖼</b><span>สรุปเป็นรูปภาพ<small>PNG</small></span></button>
+      <button data-act="xlsx"><b>📗</b><span>Excel / Google Sheet<small>.xlsx</small></span></button>
+      <button data-act="csv"><b>📄</b><span>ไฟล์ CSV</span></button>
+      <button data-act="backup"><b>💾</b><span>สำรองข้อมูลทั้งหมด<small>.json</small></span></button>
+      <label class="sbtn" tabindex="0"><b>📂</b><span>กู้คืนจากไฟล์สำรอง</span><input type="file" accept=".json,application/json" id="restoreFile" hidden></label>
+      <button data-act="print"><b>🖨</b><span>พิมพ์หน้านี้</span></button>
+    </div></section>
+    <section><h3>🎨 การแสดงผล</h3><div class="sgrid">
+      <button data-act="theme"><b>◐</b><span>สลับโหมดมืด/สว่าง</span></button>
+    </div></section>
+    <section class="danger-zone"><div class="sgrid">
+      <button data-act="delClass" class="danger"><b>🗑</b><span>ลบห้องนี้</span></button>
+      <button data-act="logout" id="logoutItem"><b>🚪</b><span>ออกจากระบบ</span></button>
+    </div></section>
+  </div>
+</aside>
 
 <main id="view" tabindex="-1"></main>
 
@@ -1871,10 +1929,37 @@ function demo(){
 }
 
 /* ================= events ================= */
-const menuBtn = document.getElementById('menuBtn'), menuPop = document.getElementById('menuPop');
-function closeMenu(){ menuPop.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false'); }
-menuBtn.addEventListener('click', e=>{ e.stopPropagation(); const o=menuPop.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); });
-document.addEventListener('click', e=>{ if(!menuPop.contains(e.target)) closeMenu(); });
+/* แผงตั้งค่า: มือถือ = แผ่นเลื่อนขึ้นจากล่าง (เลื่อนดูได้) · โน้ตบุ๊ก = แถบด้านขวา */
+const menuBtn = document.getElementById('menuBtn'), menuPop = document.getElementById('menuPop'), menuBg = document.getElementById('menuBg');
+let menuScrollY = 0;
+function openMenu(){
+  if(!menuPop.hidden) return;
+  menuScrollY = window.scrollY;
+  menuPop.hidden = false; menuBg.hidden = false; document.documentElement.classList.add('sheet-lock');
+  requestAnimationFrame(()=>{ menuPop.classList.add('open'); menuBg.classList.add('open'); });
+  menuBtn.setAttribute('aria-expanded','true');
+  menuPop.querySelector('.sheet-body').scrollTop = 0;
+  setTimeout(()=>document.getElementById('menuClose').focus({preventScroll:true}), 60);
+}
+function closeMenu(){
+  if(menuPop.hidden) return;
+  menuPop.classList.remove('open'); menuBg.classList.remove('open'); menuPop.style.transform='';
+  document.documentElement.classList.remove('sheet-lock');
+  menuBtn.setAttribute('aria-expanded','false');
+  setTimeout(()=>{ if(!menuPop.classList.contains('open')){ menuPop.hidden = true; menuBg.hidden = true; } }, 260);
+}
+menuBtn.addEventListener('click', e=>{ e.stopPropagation(); menuPop.hidden ? openMenu() : closeMenu(); });
+menuBg.addEventListener('click', closeMenu);
+document.getElementById('menuClose').addEventListener('click', closeMenu);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !menuPop.hidden) closeMenu(); });
+menuPop.querySelector('label.sbtn').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); document.getElementById('restoreFile').click(); } });
+/* ลากแถบด้านบนลงเพื่อปิด (มือถือ) */
+(()=>{ let y0=null, dy=0; const head = menuPop.querySelector('.sheet-grab');
+  const start = e=>{ y0 = e.touches[0].clientY; dy = 0; menuPop.style.transition='none'; };
+  const move = e=>{ if(y0==null) return; dy = Math.max(0, e.touches[0].clientY - y0); menuPop.style.transform = `translateY(${dy}px)`; };
+  const end = ()=>{ if(y0==null) return; menuPop.style.transition=''; menuPop.style.transform=''; y0=null; if(dy>90) closeMenu(); };
+  [head, menuPop.querySelector('.sheet-head')].forEach(el=>{ el.addEventListener('touchstart', start, {passive:true}); el.addEventListener('touchmove', move, {passive:true}); el.addEventListener('touchend', end); el.addEventListener('touchcancel', end); });
+})();
 
 document.getElementById('tabs').addEventListener('click', e=>{
   const b = e.target.closest('[data-tab]'); if(!b) return; tab = b.dataset.tab; render(); animateView(); window.scrollTo({top:0});
@@ -2025,7 +2110,7 @@ authReady.then(auth => fbA.onAuthStateChanged(auth, u => {
     API = {url: (()=>{ try{ return JSON.parse(localStorage.getItem(API_KEY))?.url; }catch(e){} })() || DEFAULT_API_URL};
     try{ localStorage.setItem(API_KEY, JSON.stringify(API)); }catch(e){}
     document.getElementById('gate').hidden = true;
-    document.getElementById('logoutItem').textContent = '🚪 ออกจากระบบ (' + u.email + ')';
+    document.getElementById('logoutItem').querySelector('span').innerHTML = 'ออกจากระบบ<small>' + esc(u.email) + '</small>'; document.getElementById('sheetUser').textContent = u.email;
     pullFromSheet();
   } else {
     API = null;
