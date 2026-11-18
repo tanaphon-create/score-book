@@ -291,7 +291,10 @@ dialog.xwide{width:min(940px,calc(100vw - 24px))}
 .im-chk input{width:18px;height:18px;accent-color:var(--brand)}
 [hidden]{display:none!important}
 .im-img{width:100%;height:auto;display:block;border-radius:12px;-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto}
-.im-img+.im-img{margin-top:10px}
+.im-img+.im-img,.im-one+.im-img{margin-top:10px}
+@media (max-width:600px){.im-foot{flex-direction:column-reverse;align-items:stretch;gap:8px}.im-foot .btn{width:100%;justify-content:center;margin:0}}
+.im-one{display:flex;justify-content:center;margin-top:6px;width:100%}
+.im-inapp{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn,#f59e0b) 14%,transparent);font-size:.9rem;line-height:1.5}
 .im-flash{outline:3px solid var(--accent,#7C5CFF);outline-offset:2px;transition:outline-color .3s}
 .im-prev{margin-top:6px;border:1px solid var(--line);border-radius:14px;padding:8px;background:var(--surface-2);max-height:60vh;overflow:auto}
 dialog[open]{animation:dlg .32s var(--ease)}
@@ -1870,6 +1873,7 @@ async function buildSummaryImages(c, o){
 function imageExportDialog(){
   if(!S.classes.length){ toast('ยังไม่มีห้องเรียน'); return; }
   const MOBILE = matchMedia('(pointer:coarse)').matches || /Android|iPhone|iPad|iPod|Line\/|FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+  const IN_APP = /\bLine\/|FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|; wv\)/i.test(navigator.userAgent);   // เบราว์เซอร์ในแอป (LINE/Facebook) ดาวน์โหลดไฟล์ไม่ได้
   let cls = C(), pages = [], files = [], urls = [], seq = 0, theme = localStorage.getItem('scorebook.imgtheme') || 'violet';
   if(!IMG_THEMES[theme]) theme = 'violet';
   let teacherName = (()=>{ try{ const v = localStorage.getItem('scorebook.teacher'); return v===null ? 'ครูธนพล' : v; }catch(e){ return 'ครูธนพล'; } })();
@@ -1887,9 +1891,10 @@ function imageExportDialog(){
     <div class="field"><label for="im_sort">เรียงลำดับ</label><select class="ctl" id="im_sort"><option value="no">ตามเลขที่</option><option value="score">คะแนนมาก → น้อย</option></select></div>
     <div class="im-prev" id="im_prev"><span class="hint">กำลังสร้างตัวอย่าง…</span></div>
     <p class="hint" id="im_info" style="margin:6px 0 0"></p>
-    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>
-      <button type="button" class="btn" id="im_share" hidden>แชร์</button>
-      <button type="button" class="btn pri" id="im_dl" disabled>${MOBILE?'💾 บันทึกรูป':'ดาวน์โหลดรูป (PNG)'}</button></div>`;
+    <div class="dlg-foot im-foot"><button type="button" class="btn left" data-close>ปิด</button>
+      <button type="button" class="btn" id="im_share" hidden>${MOBILE?'📤 แชร์/ลงคลังรูป':'แชร์'}</button>
+      <button type="button" class="btn pri" id="im_dl" disabled>${MOBILE?'⬇️ ดาวน์โหลดรูป':'ดาวน์โหลดรูป (PNG)'}</button></div>
+    ${IN_APP?`<p class="im-inapp">⚠ กำลังเปิดในแอป (เช่น LINE/Facebook) ซึ่งดาวน์โหลดไฟล์ไม่ได้ — <a href="${esc(location.href.split('#')[0] + (location.search?'&':'?') + 'openExternalBrowser=1')}" target="_blank" rel="noopener">เปิดใน Chrome/Safari</a> หรือกดค้างที่รูปแล้วเลือก "บันทึกรูปภาพ"</p>`:''}`;
   const opts = () => ({theme, teacher:document.getElementById('im_teacher').value.trim(), sort:document.getElementById('im_sort').value, summary:document.getElementById('im_sum').checked, att:document.getElementById('im_att').checked,
     bonus:document.getElementById('im_bonus').checked, code:document.getElementById('im_code').checked,
     tasks:[...document.querySelectorAll('#im_tasks [data-tk]:checked')].map(x=>x.dataset.tk)});
@@ -1903,9 +1908,10 @@ function imageExportDialog(){
       files = bl.map((b,i)=>new File([b], fileName(i), {type:'image/png'}));
       urls = bl.map(b=>URL.createObjectURL(b));
       // ใช้ <img> แทน canvas → มือถือกดค้างที่รูปแล้ว "บันทึกรูปภาพ" ได้เสมอ (แม้ในแอป LINE/Facebook)
-      prev.innerHTML = urls.map((u,i)=>`<img src="${u}" alt="สรุปคะแนน รูปที่ ${i+1}" class="im-img">`).join('');
+      prev.innerHTML = urls.map((u,i)=>`<img src="${u}" alt="สรุปคะแนน รูปที่ ${i+1}" class="im-img">`
+        + (MOBILE && urls.length>1 ? `<a class="btn sm im-one" href="${u}" download="${esc(files[i].name)}">⬇️ ดาวน์โหลดรูปที่ ${i+1}</a>` : '')).join('');
       const cv = pg[0];
-      document.getElementById('im_info').textContent = (MOBILE ? '📱 ถ้าปุ่มบันทึกไม่ทำงาน: กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" · ' : '') + `ขนาด ${cv.width}×${cv.height}px` + (pg.length>1 ? ` · ${pg.length} รูป (รูปละ 30 คน)` : '');
+      document.getElementById('im_info').textContent = (MOBILE ? '📱 ถ้าดาวน์โหลดไม่ได้: กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" · ' : '') + `ขนาด ${cv.width}×${cv.height}px` + (pg.length>1 ? ` · ${pg.length} รูป (รูปละ 30 คน)` : '');
       const dl = document.getElementById('im_dl'); if(dl) dl.disabled = false;
     }catch(e){ console.error(e); prev.innerHTML = '<span class="hint">สร้างรูปไม่สำเร็จ</span>'; }
   };
@@ -1927,9 +1933,12 @@ function imageExportDialog(){
     if(e.target.id==='im_dl'){
       if(!files.length) return toast('กำลังสร้างรูป… รอสักครู่');
       if(MOBILE){
-        // มือถือ: เปิดหน้าแชร์ของเครื่อง (มี "บันทึกรูปภาพ" ลงคลังรูป) — เรียกทันทีในจังหวะแตะ ไม่ await ก่อน
-        if(canShareFiles(files)){ try{ await navigator.share({files}); toast('✓ เรียบร้อย'); }catch(err){ if(err?.name!=='AbortError') longPressHint(); } }
-        else longPressHint();
+        if(IN_APP){ longPressHint(); return; }
+        // มือถือ: ดาวน์โหลดไฟล์จริง (Android → โฟลเดอร์ Download/แกลเลอรี · iPhone → แอปไฟล์) ผ่านลิงก์ <a download> ในจังหวะแตะ
+        const go = i => { const a = document.createElement('a'); a.href = urls[i]; a.download = files[i].name; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
+        go(0);
+        if(files.length>1) toast(`ดาวน์โหลดรูปที่ 1 แล้ว · กดปุ่ม "ดาวน์โหลดรูปที่ 2…" ใต้รูปตัวอย่างสำหรับรูปที่เหลือ`);
+        else toast(/iPhone|iPad|iPod/.test(navigator.userAgent) ? '⬇️ ดาวน์โหลดแล้ว ดูในแอป "ไฟล์" › ดาวน์โหลด (อยากเก็บลงรูปภาพ กด "แชร์/ลงคลังรูป")' : '⬇️ ดาวน์โหลดแล้ว ดูในแกลเลอรีหรือโฟลเดอร์ Download');
         return;
       }
       const b = e.target; b.disabled = true;
@@ -1939,7 +1948,7 @@ function imageExportDialog(){
       try{ await navigator.share({files, title:cls.name}); }catch(err){ if(err?.name!=='AbortError') toast('แชร์ไม่สำเร็จ ลองดาวน์โหลดแทน'); } }
   };
   dlg.addEventListener('close', ()=>{ urls.forEach(u=>URL.revokeObjectURL(u)); urls = []; }, {once:true});
-  if(!MOBILE && canShareFiles([new File(['x'],'a.png',{type:'image/png'})])) root.querySelector('#im_share').hidden = false;
+  if(!IN_APP && canShareFiles([new File(['x'],'a.png',{type:'image/png'})])) root.querySelector('#im_share').hidden = false;
   refresh();
 }
 
