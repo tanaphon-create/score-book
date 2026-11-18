@@ -290,6 +290,9 @@ dialog.xwide{width:min(940px,calc(100vw - 24px))}
 .im-chk label{display:flex;align-items:center;gap:7px;font-weight:500;font-size:14px}
 .im-chk input{width:18px;height:18px;accent-color:var(--brand)}
 [hidden]{display:none!important}
+.sum-acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin:0 0 12px}
+@media (max-width:600px){.sum-acts .btn{flex:1 1 calc(50% - 4px);justify-content:center}.sum-acts .btn.pri{flex-basis:100%;min-height:48px;font-size:1.02rem}}
+@media print{.sum-acts{display:none!important}}
 .im-img{width:100%;height:auto;display:block;border-radius:12px;-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto}
 .im-img+.im-img,.im-one+.im-img{margin-top:10px}
 @media (max-width:600px){.im-foot{flex-direction:column-reverse;align-items:stretch;gap:8px}.im-foot .btn{width:100%;justify-content:center;margin:0}}
@@ -1205,6 +1208,7 @@ function viewSum(v, c){
   const catTotals = {};
   c.tasks.forEach(t=>{ catTotals[t.cat]=(catTotals[t.cat]||0)+(+t.max); });
   v.innerHTML = `
+  <div class="sum-acts"><button class="btn pri" data-act="img">🖼 ดาวน์โหลดรูปตารางคะแนน</button><button class="btn" data-act="xlsx">⬇ Excel / Sheet</button><button class="btn" data-act="print">🖨 พิมพ์</button></div>
   <div class="sum-top">
     <div class="card ring-card">
       <div class="ring-wrap"><svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brand)"/><stop offset=".55" stop-color="var(--brand-2)"/><stop offset="1" stop-color="var(--brand-3)"/></linearGradient></defs>
@@ -1233,7 +1237,7 @@ function viewSum(v, c){
       <option value="low" ${sumSort==='low'?'selected':''}>คะแนนน้อย → มาก</option>
       <option value="att" ${sumSort==='att'?'selected':''}>มาเรียนน้อยสุดก่อน</option>
     </select>
-    <div class="grow"></div><button class="btn" data-act="print">🖨 พิมพ์</button><button class="btn" data-act="img">🖼 รูปภาพ</button><button class="btn pri" data-act="xlsx">⬇ ส่งออก Excel / Sheet</button></div>
+    </div>
   <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
     <th>อันดับ</th><th>คะแนนงาน</th><th>เสริม</th><th>รวม / ${fmt(maxTotal(c))}</th><th>ร้อยละ</th><th>เกรด</th><th>มาเรียน</th><th>ส่งงาน</th><th>หมายเหตุ</th></tr></thead><tbody>
   ${rows.map(({s,st})=>{ const sent=c.tasks.filter(t=>{const val=c.scores[t.id]?.[s.id]; return val!=null&&val!==''}).length; const miss=c.tasks.length-sent; const rk=rankOf.get(s.id);
