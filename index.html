@@ -289,6 +289,10 @@ dialog.xwide{width:min(940px,calc(100vw - 24px))}
 .im-chk{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px}
 .im-chk label{display:flex;align-items:center;gap:7px;font-weight:500;font-size:14px}
 .im-chk input{width:18px;height:18px;accent-color:var(--brand)}
+[hidden]{display:none!important}
+.im-img{width:100%;height:auto;display:block;border-radius:12px;-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto}
+.im-img+.im-img{margin-top:10px}
+.im-flash{outline:3px solid var(--accent,#7C5CFF);outline-offset:2px;transition:outline-color .3s}
 .im-prev{margin-top:6px;border:1px solid var(--line);border-radius:14px;padding:8px;background:var(--surface-2);max-height:60vh;overflow:auto}
 dialog[open]{animation:dlg .32s var(--ease)}
 @keyframes dlg{from{opacity:0;transform:translateY(18px) scale(.96)}}
@@ -1730,8 +1734,10 @@ async function buildSummaryImages(c, o){
     const rows = list.slice(p*PER,(p+1)*PER), last = p===pages-1;
     const cardH = RH + rows.length*ROW + (last?FOOT:0);
     const H = HB + cardH + NOTE + 20;
-    const cv = document.createElement('canvas'); cv.width = W*S; cv.height = Math.ceil(H*S);
-    const g = cv.getContext('2d'); g.scale(S,S); g.textBaseline='middle';
+    // iPhone/iPad จำกัดพื้นที่ canvas ~16.7 ล้านพิกเซล → ลดความคมชัดอัตโนมัติถ้ารูปใหญ่เกิน (กันรูปว่าง/บันทึกไม่ได้)
+    const SS = Math.max(0.5, Math.min(S, Math.sqrt(14e6/(W*H)), 8000/W, 8000/H));
+    const cv = document.createElement('canvas'); cv.width = Math.round(W*SS); cv.height = Math.ceil(H*SS);
+    const g = cv.getContext('2d'); g.scale(SS,SS); g.textBaseline='middle';
     const text = (s,x,y,f,color,al='left',mw)=>{ g.font=f; g.fillStyle=color; g.textAlign=al; g.fillText(mw?fitText(g,s,mw):String(s),x,y); };
 
     // พื้นหลัง
@@ -1843,7 +1849,8 @@ async function buildSummaryImages(c, o){
 
 function imageExportDialog(){
   if(!S.classes.length){ toast('ยังไม่มีห้องเรียน'); return; }
-  let cls = C(), pages = [], seq = 0, theme = localStorage.getItem('scorebook.imgtheme') || 'violet';
+  const MOBILE = matchMedia('(pointer:coarse)').matches || /Android|iPhone|iPad|iPod|Line\/|FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+  let cls = C(), pages = [], files = [], urls = [], seq = 0, theme = localStorage.getItem('scorebook.imgtheme') || 'violet';
   if(!IMG_THEMES[theme]) theme = 'violet';
   let teacherName = (()=>{ try{ const v = localStorage.getItem('scorebook.teacher'); return v===null ? 'ครูธนพล' : v; }catch(e){ return 'ครูธนพล'; } })();
   const html = () => `<h2>ส่งออกสรุปเป็นรูปภาพ</h2>
@@ -1862,7 +1869,7 @@ function imageExportDialog(){
     <p class="hint" id="im_info" style="margin:6px 0 0"></p>
     <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>
       <button type="button" class="btn" id="im_share" hidden>แชร์</button>
-      <button type="button" class="btn pri" id="im_dl">ดาวน์โหลดรูป (PNG)</button></div>`;
+      <button type="button" class="btn pri" id="im_dl" disabled>${MOBILE?'💾 บันทึกรูป':'ดาวน์โหลดรูป (PNG)'}</button></div>`;
   const opts = () => ({theme, teacher:document.getElementById('im_teacher').value.trim(), sort:document.getElementById('im_sort').value, summary:document.getElementById('im_sum').checked, att:document.getElementById('im_att').checked,
     bonus:document.getElementById('im_bonus').checked, code:document.getElementById('im_code').checked,
     tasks:[...document.querySelectorAll('#im_tasks [data-tk]:checked')].map(x=>x.dataset.tk)});
@@ -1870,12 +1877,22 @@ function imageExportDialog(){
     const my = ++seq, prev = document.getElementById('im_prev'); if(!prev) return;
     try{
       const pg = await buildSummaryImages(cls, opts()); if(my!==seq) return;
-      pages = pg; prev.innerHTML = ''; const cv = pg[0]; cv.style.cssText = 'width:100%;height:auto;display:block;border-radius:12px'; prev.appendChild(cv);
-      document.getElementById('im_info').textContent = `ขนาด ${cv.width}×${cv.height}px` + (pg.length>1 ? ` · ${pg.length} รูป (รูปละ 30 คน) · แสดงตัวอย่างรูปแรก` : '');
+      const bl = await Promise.all(pg.map(cv=>new Promise(r=>cv.toBlob(r,'image/png')))); if(my!==seq) return;
+      if(bl.some(b=>!b)) throw new Error('toBlob failed');
+      pages = pg; urls.forEach(u=>URL.revokeObjectURL(u));
+      files = bl.map((b,i)=>new File([b], fileName(i), {type:'image/png'}));
+      urls = bl.map(b=>URL.createObjectURL(b));
+      // ใช้ <img> แทน canvas → มือถือกดค้างที่รูปแล้ว "บันทึกรูปภาพ" ได้เสมอ (แม้ในแอป LINE/Facebook)
+      prev.innerHTML = urls.map((u,i)=>`<img src="${u}" alt="สรุปคะแนน รูปที่ ${i+1}" class="im-img">`).join('');
+      const cv = pg[0];
+      document.getElementById('im_info').textContent = (MOBILE ? '📱 ถ้าปุ่มบันทึกไม่ทำงาน: กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" · ' : '') + `ขนาด ${cv.width}×${cv.height}px` + (pg.length>1 ? ` · ${pg.length} รูป (รูปละ 30 คน)` : '');
+      const dl = document.getElementById('im_dl'); if(dl) dl.disabled = false;
     }catch(e){ console.error(e); prev.innerHTML = '<span class="hint">สร้างรูปไม่สำเร็จ</span>'; }
   };
   const fileName = i => `${cls.name.replace(/[\\/:*?"<>|]/g,'-')}-สรุป${pages.length>1?'-'+(i+1):''}.png`;
-  const blobs = () => Promise.all(pages.map(cv=>new Promise(r=>cv.toBlob(r,'image/png'))));
+  const canShareFiles = f => { try{ return !!(navigator.canShare && navigator.share && f.length && navigator.canShare({files:f})); }catch(_){ return false; } };
+  const longPressHint = () => { const p = document.getElementById('im_prev'); p?.scrollIntoView({behavior:'smooth', block:'center'}); p?.classList.add('im-flash'); setTimeout(()=>p?.classList.remove('im-flash'), 1600);
+    toast('กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"'); };
   openDialog(html(), ()=>false, true); dlg.classList.add('xwide');
   const root = dlgForm;
   let tmr; root.oninput = e=>{ if(e.target.id==='im_teacher'){ clearTimeout(tmr); tmr=setTimeout(()=>{ try{ localStorage.setItem('scorebook.teacher', e.target.value.trim()); }catch(_){} refresh(); }, 350); } };
@@ -1887,11 +1904,22 @@ function imageExportDialog(){
     const th = e.target.closest('[data-theme]'); if(th){ theme = th.dataset.theme; try{ localStorage.setItem('scorebook.imgtheme', theme); }catch(_){}
       root.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed', b===th)); refresh(); return; }
     if(e.target.id==='im_all' || e.target.id==='im_none'){ e.preventDefault(); root.querySelectorAll('#im_tasks [data-tk]').forEach(x=>x.checked = e.target.id==='im_all'); refresh(); return; }
-    if(e.target.id==='im_dl'){ const b = e.target; b.disabled = true; const bl = await blobs(); for(let i=0;i<bl.length;i++){ await download(fileName(i), bl[i], 'image/png'); await new Promise(r=>setTimeout(r,350)); } b.disabled = false; toast(`บันทึกรูปแล้ว ${bl.length} ไฟล์`); return; }
-    if(e.target.id==='im_share'){ const bl = await blobs(); const files = bl.map((b,i)=>new File([b], fileName(i), {type:'image/png'}));
+    if(e.target.id==='im_dl'){
+      if(!files.length) return toast('กำลังสร้างรูป… รอสักครู่');
+      if(MOBILE){
+        // มือถือ: เปิดหน้าแชร์ของเครื่อง (มี "บันทึกรูปภาพ" ลงคลังรูป) — เรียกทันทีในจังหวะแตะ ไม่ await ก่อน
+        if(canShareFiles(files)){ try{ await navigator.share({files}); toast('✓ เรียบร้อย'); }catch(err){ if(err?.name!=='AbortError') longPressHint(); } }
+        else longPressHint();
+        return;
+      }
+      const b = e.target; b.disabled = true;
+      for(let i=0;i<files.length;i++){ await download(files[i].name, files[i], 'image/png'); await new Promise(r=>setTimeout(r,350)); }
+      b.disabled = false; toast(`บันทึกรูปแล้ว ${files.length} ไฟล์`); return; }
+    if(e.target.id==='im_share'){ if(!files.length) return;
       try{ await navigator.share({files, title:cls.name}); }catch(err){ if(err?.name!=='AbortError') toast('แชร์ไม่สำเร็จ ลองดาวน์โหลดแทน'); } }
   };
-  if(navigator.canShare && navigator.canShare({files:[new File([''],'a.png',{type:'image/png'})]})) root.querySelector('#im_share').hidden = false;
+  dlg.addEventListener('close', ()=>{ urls.forEach(u=>URL.revokeObjectURL(u)); urls = []; }, {once:true});
+  if(!MOBILE && canShareFiles([new File(['x'],'a.png',{type:'image/png'})])) root.querySelector('#im_share').hidden = false;
   refresh();
 }
 
