@@ -302,6 +302,8 @@ dialog.xwide{width:min(940px,calc(100vw - 24px))}
 .im-img+.im-img,.im-one+.im-img{margin-top:10px}
 @media (max-width:600px){.im-foot{flex-direction:column-reverse;align-items:stretch;gap:8px}.im-foot .btn{width:100%;justify-content:center;margin:0}}
 .im-foot{position:sticky;bottom:0;z-index:3;background:var(--surface);margin:10px -20px -20px;padding:12px 20px 16px;border-top:1px solid var(--line);box-shadow:0 -10px 24px -16px rgba(0,0,20,.35)}
+.im-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.im-links:empty{display:none}
+@media (max-width:600px){.im-links .btn{flex:1 1 calc(50% - 4px);justify-content:center}}
 .im-one{display:flex;justify-content:center;margin-top:6px;width:100%}
 .im-inapp{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn,#f59e0b) 14%,transparent);font-size:.9rem;line-height:1.5}
 .im-flash{outline:3px solid var(--accent,#7C5CFF);outline-offset:2px;transition:outline-color .3s}
@@ -1904,6 +1906,7 @@ function imageExportDialog(){
     <div class="field"><label for="im_sort">เรียงลำดับ</label><select class="ctl" id="im_sort"><option value="no">ตามเลขที่</option><option value="score">คะแนนมาก → น้อย</option></select></div>
     <div class="im-prev" id="im_prev"><span class="hint">กำลังสร้างตัวอย่าง…</span></div>
     <p class="hint" id="im_info" style="margin:6px 0 0"></p>
+    <div class="im-links" id="im_links"></div>
     <div class="dlg-foot im-foot"><button type="button" class="btn left" data-close>ปิด</button>
       <button type="button" class="btn" id="im_share" hidden>${MOBILE?'📤 แชร์/ลงคลังรูป':'แชร์'}</button>
       <button type="button" class="btn pri" id="im_dl" disabled>${MOBILE?'⬇️ ดาวน์โหลดรูป':'ดาวน์โหลดรูป (PNG)'}</button></div>
@@ -1921,8 +1924,9 @@ function imageExportDialog(){
       files = bl.map((b,i)=>new File([b], fileName(i), {type:'image/png'}));
       urls = bl.map(b=>URL.createObjectURL(b));
       // ใช้ <img> แทน canvas → มือถือกดค้างที่รูปแล้ว "บันทึกรูปภาพ" ได้เสมอ (แม้ในแอป LINE/Facebook)
-      prev.innerHTML = urls.map((u,i)=>`<img src="${u}" alt="สรุปคะแนน รูปที่ ${i+1}" class="im-img">`
-        + ((MOBILE ? urls.length>1 : true) ? `<a class="btn sm im-one" href="${u}" download="${esc(files[i].name)}">⬇️ ดาวน์โหลด${urls.length>1?`รูปที่ ${i+1}`:'รูปนี้'}</a>` : '')).join('');
+      prev.innerHTML = urls.map((u,i)=>`<img src="${u}" alt="สรุปคะแนน รูปที่ ${i+1}" class="im-img">`).join('');
+      const lk = document.getElementById('im_links');
+      if(lk) lk.innerHTML = (MOBILE && urls.length<2) ? '' : urls.map((u,i)=>`<a class="btn sm" href="${u}" download="${esc(files[i].name)}">⬇️ ${urls.length>1?`รูปที่ ${i+1}`:'ดาวน์โหลดรูปนี้'}</a>`).join('');
       const cv = pg[0];
       document.getElementById('im_info').textContent = (MOBILE ? '📱 ถ้าดาวน์โหลดไม่ได้: กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" · ' : '') + `ขนาด ${cv.width}×${cv.height}px` + (pg.length>1 ? ` · ${pg.length} รูป (รูปละ 30 คน)` : '');
       const dl = document.getElementById('im_dl'); if(dl) dl.disabled = false;
