@@ -215,5 +215,6 @@ $('code').addEventListener('input', ()=>{ $('sbox').classList.toggle('has', !!$(
 $('clr').addEventListener('click', ()=>{ $('code').value=''; $('sbox').classList.remove('has'); $('out').innerHTML=''; hideMsg(); $('code').focus(); });
 document.addEventListener('click', e=>{ if(e.target.id==='again'){ $('out').innerHTML=''; $('code').value=''; $('sbox').classList.remove('has'); window.scrollTo({top:0,behavior:'smooth'}); $('code').focus(); } });
 </script>
+<script src="../quiz-live/js/festival.js" defer></script>
 </body>
 </html>

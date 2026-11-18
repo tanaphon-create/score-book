@@ -293,6 +293,11 @@ dialog.xwide{width:min(940px,calc(100vw - 24px))}
 .sum-acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin:0 0 12px}
 @media (max-width:600px){.sum-acts .btn{flex:1 1 calc(50% - 4px);justify-content:center}.sum-acts .btn.pri{flex-basis:100%;min-height:48px;font-size:1.02rem}}
 @media print{.sum-acts{display:none!important}}
+.fest-list{display:grid;gap:8px}
+.fest-it{display:flex;gap:12px;align-items:center;padding:12px 14px;border:2px solid var(--line);border-radius:14px;cursor:pointer}
+.fest-it:has(input:checked){border-color:var(--brand);background:color-mix(in srgb,var(--brand) 8%,transparent)}
+.fest-it input{width:20px;height:20px;accent-color:var(--brand);flex:none}
+.fest-it span{display:grid}.fest-it small{color:var(--muted)}
 .im-img{width:100%;height:auto;display:block;border-radius:12px;-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto}
 .im-img+.im-img,.im-one+.im-img{margin-top:10px}
 @media (max-width:600px){.im-foot{flex-direction:column-reverse;align-items:stretch;gap:8px}.im-foot .btn{width:100%;justify-content:center;margin:0}}
@@ -560,6 +565,7 @@ nav.tabs button:hover{color:var(--tc)}
     </div></section>
     <section><h3>🎨 การแสดงผล</h3><div class="sgrid">
       <button data-act="theme"><b>◐</b><span>สลับโหมดมืด/สว่าง</span></button>
+      <button data-act="fest"><b>🎉</b><span>ของตกแต่งเทศกาล<small>ลอยกระทง ฯลฯ</small></span></button>
     </div></section>
     <section class="danger-zone"><div class="sgrid">
       <button data-act="delClass" class="danger"><b>🗑</b><span>ลบห้องนี้</span></button>
@@ -1956,6 +1962,18 @@ function imageExportDialog(){
   refresh();
 }
 
+/* ---------- ของตกแต่งตามเทศกาล (ใช้ร่วมกับ Ghost Class ทุกหน้า) ---------- */
+function festDialog(){
+  if(!window.GCFest){ toast('ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง'); return; }
+  const cur = GCFest.get().mode;
+  const opts = [['auto','📅 อัตโนมัติ','แสดงเองเมื่อถึงช่วงเทศกาล (ลอยกระทง 17–25 พ.ย.)'],['loykrathong','🪷 ลอยกระทง','เปิดตอนนี้เลย'],['off','🚫 ปิด','ไม่แสดงของตกแต่ง']];
+  openDialog(`<h2>ของตกแต่งตามเทศกาล</h2><p class="hint" style="margin-top:0">ใช้กับทุกหน้า: สมุดคะแนน เกมคำถาม โหมดห้องเรียน และมือถือนักเรียน</p>
+    <div class="fest-list">${opts.map(([k,t,d])=>`<label class="fest-it"><input type="radio" name="fest" value="${k}" ${k===cur?'checked':''}><span><b>${t}</b><small>${d}</small></span></label>`).join('')}</div>
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ยกเลิก</button><button class="btn pri">บันทึก</button></div>`,
+    f=>{ const m = f.fest.value; (async()=>{ let tok=null; try{ tok = await idToken(); }catch(e){}
+      const r = await GCFest.set(m, tok); toast(r.ok ? '✅ บันทึกแล้ว ทุกหน้าจะเห็นตามนี้' : '⚠ บันทึกได้เฉพาะเครื่องนี้ (ยังไม่ได้เปิดสิทธิ์ในฐานข้อมูล)'); })(); });
+}
+
 function exportCSV(){
   const c = C(); if(!c) return;
   const q = v => { const s=String(v??''); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
@@ -2098,6 +2116,7 @@ document.addEventListener('click', e=>{
     case 'csv': exportCSV(); break;
     case 'backup': backup(); break;
     case 'print': window.print(); break;
+    case 'fest': { closeMenu(); festDialog(); break; }
     case 'theme': {
       const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
       r.dataset.theme = dark?'light':'dark'; try{localStorage.setItem('scorebook.theme', r.dataset.theme)}catch(e){} break; }
@@ -2188,5 +2207,6 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
+<script src="../quiz-live/js/festival.js" defer></script>
 </body>
 </html>
