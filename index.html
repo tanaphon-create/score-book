@@ -671,13 +671,33 @@ function pending(){
   const metaChanged = base.__meta !== hash(JSON.stringify(metaObj()));
   return {changed, deleted, metaChanged, any: changed.length || deleted.length || metaChanged};
 }
+// คะแนนพิเศษที่เกม/โหมดห้องเรียนเขียนลง Sheet โดยตรง (มี gk) → รวมเข้าข้อมูลในเครื่องก่อนส่งทับ ไม่ให้หาย
+let lastPull = 0;
+function mergeGameBonus(list){
+  let n = 0;
+  (list||[]).forEach(rc=>{
+    const c = S.classes.find(x=>x.id===rc.id); if(!c) return;
+    c.bonus = c.bonus || [];
+    const have = new Set(c.bonus.map(b=>b.id)), gone = new Set(c.bonusDel||[]), sids = new Set((c.students||[]).map(x=>x.id));
+    (rc.bonus||[]).forEach(b=>{ if(b && b.gk && !have.has(b.id) && !gone.has(b.id) && sids.has(b.sid)){ c.bonus.push(b); have.add(b.id); n++; } });
+  });
+  if(n){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+    if(!document.activeElement?.matches('input,textarea')) render();
+    toast(`📥 รับคะแนนพิเศษจากเกม ${n} รายการ`); }
+  return n;
+}
 function syncSoon(){ clearTimeout(syncTimer); setStatus('syncing'); syncTimer = setTimeout(syncNow, 1200); }
 async function syncNow(){
   if(!API) return;
   if(syncing){ syncAgain = true; return; }
-  const p = pending();
+  let p = pending();
   if(!p.any){ setStatus('ok'); return; }
   syncing = true; setStatus('syncing');
+  if(Date.now() - lastPull > 15000){   // ดึงของใหม่จาก Sheet มารวมก่อน (กันทับคะแนนที่เกมเพิ่งบันทึก)
+    try{ const j = await api({action:'load'}); lastPull = Date.now(); mergeGameBonus(j.classes); }catch(e){}
+  }
+  p = pending();
+  if(!p.any){ syncing = false; setStatus('ok'); return; }
   const sent = p.changed.map(c => JSON.stringify(c));
   const meta = metaObj(), metaStr = JSON.stringify(meta);
   try{
@@ -696,10 +716,10 @@ async function syncNow(){
 }
 async function pullFromSheet(){
   if(!API || syncing) return;
-  if(pending().any){ await syncNow(); if(lastErr) return; }
   setStatus('loading');
   try{
-    const j = await api({action:'load'});
+    const j = await api({action:'load'}); lastPull = Date.now();
+    if(pending().any){ mergeGameBonus(j.classes); return syncNow(); }   // มีงานที่ยังไม่ส่ง: รวมคะแนนเกมก่อน แล้วค่อยส่ง
     const list = j.classes || [], order = j.meta?.order || [];
     list.sort((a,b)=>(order.indexOf(a.id)+1||1e9)-(order.indexOf(b.id)+1||1e9));
     if(pending().any) return syncNow();           // user edited while loading; push first
@@ -2025,7 +2045,8 @@ document.addEventListener('click', e=>{
   }
   if(d.delbonus){
     const i = c.bonus.findIndex(b=>b.id===d.delbonus); const b = c.bonus[i];
-    c.bonus.splice(i,1); save(); render(); toast('ลบรายการแล้ว', ()=>{ c.bonus.push(b); save(); render(); }); return;
+    c.bonus.splice(i,1); if(b?.gk) c.bonusDel = [...(c.bonusDel||[]), b.id].slice(-500);
+    save(); render(); toast('ลบรายการแล้ว', ()=>{ c.bonus.push(b); if(c.bonusDel) c.bonusDel = c.bonusDel.filter(x=>x!==b.id); save(); render(); }); return;
   }
   if(d.delstu){
     const i = c.students.findIndex(s=>s.id===d.delstu); const s=c.students[i];
