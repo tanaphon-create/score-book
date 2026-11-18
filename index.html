@@ -301,6 +301,7 @@ dialog.xwide{width:min(940px,calc(100vw - 24px))}
 .im-img{width:100%;height:auto;display:block;border-radius:12px;-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto}
 .im-img+.im-img,.im-one+.im-img{margin-top:10px}
 @media (max-width:600px){.im-foot{flex-direction:column-reverse;align-items:stretch;gap:8px}.im-foot .btn{width:100%;justify-content:center;margin:0}}
+.im-foot{position:sticky;bottom:0;z-index:3;background:var(--surface);margin:10px -20px -20px;padding:12px 20px 16px;border-top:1px solid var(--line);box-shadow:0 -10px 24px -16px rgba(0,0,20,.35)}
 .im-one{display:flex;justify-content:center;margin-top:6px;width:100%}
 .im-inapp{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn,#f59e0b) 14%,transparent);font-size:.9rem;line-height:1.5}
 .im-flash{outline:3px solid var(--accent,#7C5CFF);outline-offset:2px;transition:outline-color .3s}
@@ -1700,7 +1701,9 @@ function classDialog(edit){
 
 /* ================= export / import ================= */
 async function download(name, content, type){
-  if(window.claude?.use){
+  // ใช้ระบบดาวน์โหลดของ Claude เฉพาะตอนเปิดเป็น artifact บน claude.ai เท่านั้น
+  // (ส่วนขยายเบราว์เซอร์บางตัวสร้าง window.claude ไว้ ถ้าไม่เช็กโดเมนจะดาวน์โหลดไม่ออก)
+  if(window.claude?.use && /(^|\.)(claude\.ai|claudeusercontent\.com)$/.test(location.hostname)){
     const dl = await claude.use('downloads');
     if(dl){
       try{ await dl.save({filename:name, data:new Blob([content],{type})}); return true; }
@@ -1919,7 +1922,7 @@ function imageExportDialog(){
       urls = bl.map(b=>URL.createObjectURL(b));
       // ใช้ <img> แทน canvas → มือถือกดค้างที่รูปแล้ว "บันทึกรูปภาพ" ได้เสมอ (แม้ในแอป LINE/Facebook)
       prev.innerHTML = urls.map((u,i)=>`<img src="${u}" alt="สรุปคะแนน รูปที่ ${i+1}" class="im-img">`
-        + (MOBILE && urls.length>1 ? `<a class="btn sm im-one" href="${u}" download="${esc(files[i].name)}">⬇️ ดาวน์โหลดรูปที่ ${i+1}</a>` : '')).join('');
+        + ((MOBILE ? urls.length>1 : true) ? `<a class="btn sm im-one" href="${u}" download="${esc(files[i].name)}">⬇️ ดาวน์โหลด${urls.length>1?`รูปที่ ${i+1}`:'รูปนี้'}</a>` : '')).join('');
       const cv = pg[0];
       document.getElementById('im_info').textContent = (MOBILE ? '📱 ถ้าดาวน์โหลดไม่ได้: กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" · ' : '') + `ขนาด ${cv.width}×${cv.height}px` + (pg.length>1 ? ` · ${pg.length} รูป (รูปละ 30 คน)` : '');
       const dl = document.getElementById('im_dl'); if(dl) dl.disabled = false;
