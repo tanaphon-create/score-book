@@ -160,6 +160,12 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px
 .seg button[aria-pressed="true"].A{background:var(--bad);color:#fff}
 .seg button[aria-pressed="true"].L{background:var(--info);color:#fff}
 .seg button[aria-pressed="true"].S{background:var(--warn);color:#fff}
+.seg button[aria-pressed="true"].H{background:var(--sick);color:#fff}
+.seg button[aria-pressed="true"].E{background:var(--act);color:#fff}
+:root{--sick:#c026d3;--sick-soft:#fae8ff;--act:#0d9488;--act-soft:#dcf5f1}
+.att-legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:-4px 0 10px;font-size:13px;color:var(--muted)}
+.att-legend span{display:inline-flex;align-items:center;gap:6px}
+.chip.sick{background:var(--sick-soft);color:var(--sick)} .chip.act{background:var(--act-soft);color:var(--act)}
 @keyframes pop{40%{transform:scale(1.18)}}
 .seg button.pop{animation:pop .3s var(--ease)}
 .att-list td{padding:6px 10px}
@@ -167,6 +173,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px
 .dot{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;font-size:12px;font-weight:700}
 .dot.P{background:var(--ok-soft);color:var(--ok)} .dot.A{background:var(--bad);color:#fff}
 .dot.L{background:var(--info-soft);color:var(--info)} .dot.S{background:var(--warn-soft);color:var(--warn)}
+.dot.H{background:var(--sick-soft);color:var(--sick)} .dot.E{background:var(--act-soft);color:var(--act)}
 .date-h{border:0;background:none;color:inherit;font:inherit;font-weight:600;padding:2px 6px;border-radius:7px}
 .date-h:hover,.date-h.on{background:var(--brand-soft);color:var(--brand)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
@@ -370,6 +377,13 @@ dialog::backdrop{background:rgba(8,10,25,.5);backdrop-filter:blur(4px);animation
   .grid .c-name{min-width:122px;max-width:140px;padding:0 8px;left:36px;font-size:14px}
   .grid .c-no{width:36px;min-width:36px;padding:0 2px}
   .seg button{min-width:42px;padding:6px 8px;min-height:42px}
+  .att-list .seg{display:grid;grid-template-columns:repeat(3,1fr);min-width:186px}
+  .att-list .seg button{border-bottom:1px solid var(--line);min-width:0}
+  .att-list .seg button:nth-child(3n){border-right:0}
+  .att-list .seg button:nth-child(n+4){border-bottom:0}
+  .att-list td .hint{display:none}
+  .stats.att-stats{grid-template-columns:repeat(3,1fr)}
+  .stats.att-stats .stat:first-child{grid-column:1/-1}
   .mini-stats{grid-template-columns:repeat(2,1fr)}
   .stats{grid-template-columns:repeat(2,1fr);gap:8px}
   .stat b{font-size:22px}
@@ -594,7 +608,11 @@ const CATS = {
   final: {name:'สอบปลายภาค', color:'#dc2626'},
   att:   {name:'จิตพิสัย',    color:'#16a34a'}
 };
-const ATT = {P:'มา', A:'ขาด', L:'ลา', S:'สาย'};
+// สถานะเช็คชื่อ (L เดิม = ลา → ใช้เป็น ลากิจ) · มาเรียน% นับ มา + สาย + กิจกรรม
+const ATT = {P:'มา', S:'สาย', A:'ขาด', L:'ลากิจ', H:'ลาป่วย', E:'กิจกรรม'};
+const ATS = {P:'ม', S:'ส', A:'ข', L:'ล', H:'ป', E:'ก'};
+const ATT_COLOR = {P:'ok', S:'warn', A:'bad', L:'info', H:'sick', E:'act'};
+const attLine = a => `ขาด ${a.A} · ลากิจ ${a.L} · ลาป่วย ${a.H} · สาย ${a.S} · กิจกรรม ${a.E}`;
 const GRADE_COLORS = {'4':'#16a34a','3.5':'#22c55e','3':'#0ea5e9','2.5':'#38bdf8','2':'#f59e0b','1.5':'#fb923c','1':'#f87171','0':'#dc2626'};
 
 let S = load();
@@ -803,9 +821,9 @@ function gradeOf(p){
 }
 function bonusOf(c, sid){ let t=0; for(const b of c.bonus) if(b.sid===sid) t+=b.pts; return t; }
 function attOf(c, sid){
-  const r = {P:0,A:0,L:0,S:0,days:0};
-  for(const d in c.attendance){ const v=c.attendance[d][sid]; if(v){ r[v]++; r.days++; } }
-  r.pct = r.days ? (r.P + r.S) / r.days * 100 : null;
+  const r = {P:0,A:0,L:0,S:0,H:0,E:0,days:0};
+  for(const d in c.attendance){ const v=c.attendance[d][sid]; if(v && r[v]!=null){ r[v]++; r.days++; } }
+  r.pct = r.days ? (r.P + r.S + r.E) / r.days * 100 : null;
   return r;
 }
 function maxTotal(c){ return c.tasks.reduce((a,t)=>a+(+t.max||0),0); }
@@ -1116,8 +1134,8 @@ function viewAtt(v, c){
   if(!c.students.length){ v.innerHTML = noStudents(); return; }
   const day = c.attendance[attDate] || {};
   const list = visibleStudents(c);
-  const cnt = {P:0,A:0,L:0,S:0}; let none=0;
-  c.students.forEach(s=> day[s.id] ? cnt[day[s.id]]++ : none++);
+  const cnt = {P:0,A:0,L:0,S:0,H:0,E:0}; let none=0;
+  c.students.forEach(s=> day[s.id] && cnt[day[s.id]]!=null ? cnt[day[s.id]]++ : none++);
   const dates = Object.keys(c.attendance).sort();
   v.innerHTML = `
   <div class="toolbar att-head">
@@ -1135,23 +1153,21 @@ function viewAtt(v, c){
   </div>
   <div class="stats att-stats">
     <div class="card stat"><small>${fmtDate(attDate,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</small><b>${c.students.length-none}<span class="muted" style="font-size:15px"> / ${c.students.length} เช็คแล้ว</span></b></div>
-    <div class="card stat"><small>มา</small><b style="color:var(--ok)">${cnt.P}</b></div>
-    <div class="card stat"><small>ขาด</small><b style="color:var(--bad)">${cnt.A}</b></div>
-    <div class="card stat"><small>ลา</small><b style="color:var(--info)">${cnt.L}</b></div>
-    <div class="card stat"><small>สาย</small><b style="color:var(--warn)">${cnt.S}</b></div>
+    ${Object.entries(ATT).map(([k,n])=>`<div class="card stat"><small>${n}</small><b style="color:var(--${ATT_COLOR[k]})">${cnt[k]}</b></div>`).join('')}
   </div>
   <div class="card tbl-wrap" style="margin-bottom:18px">
   <table class="grid att-list"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th><th>สถานะวันนี้</th><th>มาเรียน (สะสม)</th></tr></thead><tbody>
   ${list.map(s=>{ const cur=day[s.id]; const a=attOf(c,s.id); return `<tr data-sid="${s.id}">
     <td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
     <td><div class="seg" role="group" aria-label="สถานะของ ${esc(s.name)}">${Object.entries(ATT).map(([k,n])=>`<button class="${k}" data-att="${k}" aria-pressed="${cur===k}">${n}</button>`).join('')}</div></td>
-    <td>${a.pct==null?'<span class="muted">–</span>':`<span class="chip ${a.pct<80?'bad':'ok'}">${fmt(a.pct)}%</span> <span class="hint">ขาด ${a.A} · ลา ${a.L} · สาย ${a.S}</span>`}</td></tr>`}).join('')}
+    <td>${a.pct==null?'<span class="muted">–</span>':`<span class="chip ${a.pct<80?'bad':'ok'}">${fmt(a.pct)}%</span> <span class="hint">${attLine(a)}</span>`}</td></tr>`}).join('')}
   </tbody></table></div>
   ${dates.length?`<h3>ประวัติการเช็คชื่อ (${dates.length} วัน)</h3>
+  <div class="att-legend">${Object.entries(ATT).map(([k,n])=>`<span><b class="dot ${k}">${ATS[k]}</b>${n}</span>`).join('')}<span>· มาเรียน% นับ มา สาย และกิจกรรม</span></div>
   <div class="card tbl-wrap"><table class="grid"><thead><tr><th class="c-no">ที่</th><th class="c-name" style="text-align:left">ชื่อ-สกุล</th>
   ${dates.map(d=>`<th><button class="date-h ${d===attDate?'on':''}" data-date="${d}">${fmtDate(d)}</button></th>`).join('')}<th>มา%</th></tr></thead><tbody>
   ${list.map(s=>{const a=attOf(c,s.id); return `<tr><td class="c-no">${esc(s.no)}</td><td class="c-name">${nameBtn(s)}</td>
-  ${dates.map(d=>{const x=c.attendance[d][s.id]; return `<td class="num">${x?`<span class="dot ${x}" title="${ATT[x]}">${ATT[x][0]}</span>`:'<span class="muted">·</span>'}</td>`}).join('')}
+  ${dates.map(d=>{const x=c.attendance[d][s.id]; return `<td class="num">${x?`<span class="dot ${x}" title="${ATT[x]||x}">${ATS[x]||x}</span>`:'<span class="muted">·</span>'}</td>`}).join('')}
   <td class="num">${a.pct==null?'–':`<span class="chip ${a.pct<80?'bad':'ok'}">${fmt(a.pct)}</span>`}</td></tr>`}).join('')}
   </tbody></table></div>`:''}`;
 }
@@ -1259,7 +1275,7 @@ function viewSum(v, c){
     <td class="num">${c.tasks.length?`${sent}/${c.tasks.length}`:'–'}</td>
     <td class="num">${miss>0&&c.tasks.length?`<span class="chip warn">ค้าง ${miss} งาน</span>`:''}${st.ms?' <span class="chip bad">มส</span>':''}</td></tr>`}).join('')}
   </tbody></table></div>
-  <p class="hint">เกณฑ์: 80+ = 4 · 75 = 3.5 · 70 = 3 · 65 = 2.5 · 60 = 2 · 55 = 1.5 · 50 = 1 · ต่ำกว่า 50 = 0 · คะแนนเสริมนำไปรวมกับคะแนนงาน (ไม่เกิน 100%) · มาเรียนนับ "มา" และ "สาย"; ต่ำกว่า 80% = มส · กดที่ชื่อเพื่อดูรายละเอียดรายคน</p>`;
+  <p class="hint">เกณฑ์: 80+ = 4 · 75 = 3.5 · 70 = 3 · 65 = 2.5 · 60 = 2 · 55 = 1.5 · 50 = 1 · ต่ำกว่า 50 = 0 · คะแนนเสริมนำไปรวมกับคะแนนงาน (ไม่เกิน 100%) · มาเรียนนับ "มา" "สาย" และ "กิจกรรม"; ต่ำกว่า 80% = มส · กดที่ชื่อเพื่อดูรายละเอียดรายคน</p>`;
 }
 function rankMap(all){
   const ranked = [...all].sort((a,b)=>b.st.total-a.st.total); const m = new Map();
@@ -1324,7 +1340,7 @@ function studentDialog(sid){
         <div class="bar"><span style="width:${has?Math.min(100,val/t.max*100):0}%;animation-delay:${i*40}ms"></span></div>
         <b class="${has?'':'minus'}">${has?fmt(+val)+' / '+fmt(+t.max):'ยังไม่ส่ง'}</b></div>`}).join('') : '<span class="hint">ยังไม่มีงาน</span>'}</div>
     <h3>การมาเรียน ${a.days?`<span class="hint">(${a.days} วัน)</span>`:''}</h3>
-    <div class="chips"><span class="chip ok">มา ${a.P}</span><span class="chip bad">ขาด ${a.A}</span><span class="chip info">ลา ${a.L}</span><span class="chip warn">สาย ${a.S}</span></div>
+    <div class="chips">${Object.entries(ATT).map(([k,n])=>`<span class="chip ${ATT_COLOR[k]}">${n} ${a[k]}</span>`).join('')}</div>
     <h3>คะแนนเสริม <span class="${st.bonus>0?'plus':st.bonus<0?'minus':'muted'}">${st.bonus>0?'+':''}${fmt(st.bonus)}</span></h3>
     <div class="task-list" style="margin-bottom:6px">${bl.length ? bl.map(b=>`<div class="task-row" style="grid-template-columns:1fr auto auto"><span>${esc(b.reason||'—')}</span><span class="hint">${fmtDate(b.date)}</span><b class="${b.pts>=0?'plus':'minus'}">${b.pts>0?'+':''}${fmt(b.pts)}</b></div>`).join('') : '<span class="hint">ยังไม่มีรายการ</span>'}</div>
     <div class="dlg-foot"><button type="button" class="btn" id="stuBonus">⭐ +1 คะแนนเสริม</button><button type="button" class="btn pri" data-close>ปิด</button></div>`,
@@ -1361,7 +1377,7 @@ function spinner(items, label, onWin){
 function randomDialog(){
   const c = C(); if(!c) return;
   const day = c.attendance[today()] || {};
-  const all = sortedStudents(c).filter(s => s.name && !['A','L'].includes(day[s.id]));
+  const all = sortedStudents(c).filter(s => s.name && !['A','L','H','E'].includes(day[s.id]));
   if(!all.length){ toast('ยังไม่มีนักเรียนให้สุ่ม'); return; }
   const key = 'stu:' + c.id;
   let done = randMem(key), picked = null;
@@ -1376,7 +1392,7 @@ function randomDialog(){
   const go=document.getElementById('randGo'), give=document.getElementById('randGive'), reset=document.getElementById('randReset');
   const info = () => {
     const left = pool().length;
-    document.getElementById('randSub').textContent = picked ? 'เลขที่ ' + picked.no : (noRepeat ? `เหลือ ${left} จาก ${all.length} คน` : `${all.length} คน`) + ' (ไม่รวมคนที่ขาด/ลาวันนี้)';
+    document.getElementById('randSub').textContent = picked ? 'เลขที่ ' + picked.no : (noRepeat ? `เหลือ ${left} จาก ${all.length} คน` : `${all.length} คน`) + ' (ไม่รวมคนที่ขาด/ลา/ไปกิจกรรมวันนี้)';
     const list = all.filter(s=>done.has(s.id));
     document.getElementById('randDone').innerHTML = noRepeat && list.length ? `<div class="hint">ถูกสุ่มแล้ว ${list.length} คน (แตะชื่อเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(s=>`<button type="button" class="mchip" data-back="${s.id}">${esc(s.no)}. ${esc(s.name)} ↩</button>`).join('')}</div>` : '';
     reset.disabled = !done.size;
@@ -1477,7 +1493,7 @@ function buildWorkbook(c){
   const fill = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
   const L = n => { let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=(n-m-1)/26; } return s; };
   const GC = {'4':'FFBBF7D0','3.5':'FFDCFCE7','3':'FFBAE6FD','2.5':'FFE0F2FE','2':'FFFDE68A','1.5':'FFFED7AA','1':'FFFECACA','0':'FFFCA5A5','มส':'FFFDA4AF'};
-  const AC = {'มา':null,'ขาด':'FFFECACA','ลา':'FFBAE6FD','สาย':'FFFDE68A'};
+  const AC = {'มา':null,'ขาด':'FFFECACA','ลากิจ':'FFBAE6FD','ลาป่วย':'FFF5D0FE','สาย':'FFFDE68A','กิจกรรม':'FFCCFBF1'};
   const subText = `${c.subject?c.subject+' · ':''}นักเรียน ${students.length} คน · ส่งออกเมื่อ ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}`;
   const sheet = (name, ncol, frozenCols, headRow) => {
     const ws = wb.addWorksheet(name, {views:[{state:'frozen', xSplit:frozenCols, ySplit:headRow}],
@@ -1502,21 +1518,21 @@ function buildWorkbook(c){
 
   /* ---- 1) สรุปผล ---- */
   {
-    const H = ['เลขที่','รหัส','ชื่อ-สกุล','คะแนนงาน','คะแนนเสริม',`รวม\n(เต็ม ${fmt(max)})`,'ร้อยละ','เกรด','อันดับ','มาเรียน %','ขาด','ลา','สาย','ส่งงาน','หมายเหตุ'];
+    const H = ['เลขที่','รหัส','ชื่อ-สกุล','คะแนนงาน','คะแนนเสริม',`รวม\n(เต็ม ${fmt(max)})`,'ร้อยละ','เกรด','อันดับ','มาเรียน %','ขาด','ลากิจ','ลาป่วย','สาย','กิจกรรม','ส่งงาน','หมายเหตุ'];
     const ws = sheet('สรุปผล', H.length, 3, 3); head(ws, 3, H);
     students.forEach((s,i)=>{ const st = stats.get(s.id); const r = 4+i;
       const sent = tasks.filter(t=>{ const val=c.scores[t.id]?.[s.id]; return val!=null&&val!==''; }).length;
       const g = st.ms ? 'มส' : (st.grade==null ? '' : +st.grade);
       const note = [tasks.length-sent>0 ? `ค้าง ${tasks.length-sent} งาน` : '', st.ms ? 'เวลาเรียนไม่ถึง 80%' : ''].filter(Boolean).join(', ');
       put(ws, r, [s.no===''?'':(+s.no||s.no), s.code, s.name, r1(st.raw), st.bonus||'', f(`D${r}+N(E${r})`, r1(st.total)), r1(st.pct), g, max?rankOf.get(s.id):'',
-        st.att.pct==null?'':r1(st.att.pct), st.att.A, st.att.L, st.att.S, tasks.length?`${sent}/${tasks.length}`:'', note], {left:[2,14], zebra:i%2});
+        st.att.pct==null?'':r1(st.att.pct), st.att.A, st.att.L, st.att.H, st.att.S, st.att.E, tasks.length?`${sent}/${tasks.length}`:'', note], {left:[2,17], zebra:i%2});
       if(g!=='') ws.getCell(r,8).fill = fill(GC[String(g)]); ws.getCell(r,8).font = {name:F,size:SZ,bold:true}; ws.getCell(r,6).font = {name:F,size:SZ,bold:true};
     });
     const last = 3+students.length;
     if(students.length){
       const pcts = students.map(s=>stats.get(s.id).pct), tots = students.map(s=>stats.get(s.id).total);
       [['ค่าเฉลี่ย','AVERAGE', a=>a.reduce((x,y)=>x+y,0)/a.length], ['สูงสุด','MAX', a=>Math.max(...a)], ['ต่ำสุด','MIN', a=>Math.min(...a)]].forEach(([label,fn,calc],k)=>{
-        put(ws, last+1+k, ['','',label,'','', f(`ROUND(${fn}(F4:F${last}),2)`, r1(calc(tots))), f(`ROUND(${fn}(G4:G${last}),2)`, r1(calc(pcts))), '','','','','','','',''], {bold:true, left:[2], fill:'FFEEF0FF'}); });
+        put(ws, last+1+k, ['','',label,'','', f(`ROUND(${fn}(F4:F${last}),2)`, r1(calc(tots))), f(`ROUND(${fn}(G4:G${last}),2)`, r1(calc(pcts))), '','','','','','','','','','',''], {bold:true, left:[2], fill:'FFEEF0FF'}); });
       const g0 = last+6; ws.getCell(g0,3).value = 'การกระจายเกรด'; ws.getCell(g0,3).font = {name:F,size:SZ,bold:true};
       const grades = ['4','3.5','3','2.5','2','1.5','1','0','มส'];
       grades.forEach((g,i)=>{ const col = 4+i; const hc = ws.getCell(g0,col), vc = ws.getCell(g0+1,col);
@@ -1525,7 +1541,7 @@ function buildWorkbook(c){
         vc.value = f(`COUNTIF($H$4:$H$${last},${g==='มส'?'"มส"':g})`, n); vc.font = {name:F,size:SZ}; vc.alignment = {horizontal:'center'}; vc.border = border; });
       ws.getCell(g0+1,3).value = 'จำนวน (คน)'; ws.getCell(g0+1,3).font = {name:F,size:SZ};
     }
-    widths(ws, [8,12,34,13,13,14,11,9,9,12,8,8,8,10,26]);
+    widths(ws, [8,12,34,13,13,14,11,9,9,12,8,8,8,8,9,10,26]);
   }
 
   /* ---- 2) คะแนน ---- */
@@ -1556,19 +1572,19 @@ function buildWorkbook(c){
   /* ---- 3) เช็คชื่อ ---- */
   {
     const n = dates.length, c0 = 3+n;
-    const H = ['เลขที่','ชื่อ-สกุล', ...dates.map(d=>fmtDate(d,{day:'numeric',month:'short',year:'2-digit'})), 'มา','ขาด','ลา','สาย','มาเรียน %'];
+    const H = ['เลขที่','ชื่อ-สกุล', ...dates.map(d=>fmtDate(d,{day:'numeric',month:'short',year:'2-digit'})), 'มา','สาย','กิจกรรม','ขาด','ลากิจ','ลาป่วย','มาเรียน %'];
     const ws = sheet('เช็คชื่อ', H.length, 2, 3); head(ws, 3, H);
     students.forEach((s,i)=>{ const a = stats.get(s.id).att; const r = 4+i;
       const cells = dates.map(d=>ATT[c.attendance[d][s.id]] || '');
       const rng = n ? `${L(3)}${r}:${L(2+n)}${r}` : null;
       const cnt = (label, val) => rng ? f(`COUNTIF(${rng},"${label}")`, val) : 0;
-      put(ws, r, [s.no===''?'':(+s.no||s.no), s.name, ...cells, cnt('มา',a.P), cnt('ขาด',a.A), cnt('ลา',a.L), cnt('สาย',a.S),
-        rng ? f(`IF(COUNTA(${rng})=0,"",ROUND((${L(c0)}${r}+${L(c0+3)}${r})/COUNTA(${rng})*100,1))`, a.pct==null?null:Math.round(a.pct*10)/10) : ''], {left:[1], zebra:i%2});
+      put(ws, r, [s.no===''?'':(+s.no||s.no), s.name, ...cells, cnt('มา',a.P), cnt('สาย',a.S), cnt('กิจกรรม',a.E), cnt('ขาด',a.A), cnt('ลากิจ',a.L), cnt('ลาป่วย',a.H),
+        rng ? f(`IF(COUNTA(${rng})=0,"",ROUND((${L(c0)}${r}+${L(c0+1)}${r}+${L(c0+2)}${r})/COUNTA(${rng})*100,1))`, a.pct==null?null:Math.round(a.pct*10)/10) : ''], {left:[1], zebra:i%2});
       cells.forEach((x,j)=>{ if(AC[x]) ws.getCell(r,3+j).fill = fill(AC[x]); });
-      if(a.pct!=null && a.pct<80) ws.getCell(r,c0+4).fill = fill('FFFDA4AF');
+      if(a.pct!=null && a.pct<80) ws.getCell(r,c0+6).fill = fill('FFFDA4AF');
     });
     if(!n){ ws.getCell(4+students.length+1,2).value = 'ยังไม่มีการเช็คชื่อ'; }
-    widths(ws, [8,34, ...dates.map(()=>11), 8,8,8,8,12]);
+    widths(ws, [8,34, ...dates.map(()=>11), 8,8,9,8,8,9,12]);
   }
 
   /* ---- 4) คะแนนเสริม ---- */
@@ -1853,7 +1869,7 @@ async function buildSummaryImages(c, o){
         }
         else if(cl.k==='attc'){
           if(sx.att.days===0){ text('–', cm, mid, font(400,21), T.muted,'center'); return; }
-          const parts=[[sx.att.A,ST.bad[0]],[sx.att.L,ST.info[0]],[sx.att.S,ST.warn[0]]]; g.font=font(600,21);
+          const parts=[[sx.att.A,ST.bad[0]],[sx.att.L+sx.att.H,ST.info[0]],[sx.att.S,ST.warn[0]]]; g.font=font(600,21);
           const ws=parts.map(q=>g.measureText(String(q[0])).width), sep=g.measureText(' / ').width, tot=ws.reduce((a,b)=>a+b,0)+sep*2;
           let px=cm-tot/2; parts.forEach((q,j)=>{ text(q[0], px, mid, font(600,21), q[0]?q[1]:T.muted, 'left'); px+=ws[j]; if(j<2){ text(' / ', px, mid, font(400,21), T.muted,'left'); px+=sep; } });
         }
@@ -1984,9 +2000,9 @@ function festDialog(){
 function exportCSV(){
   const c = C(); if(!c) return;
   const q = v => { const s=String(v??''); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-  const head = ['เลขที่','รหัส','ชื่อ-สกุล', ...c.tasks.map(t=>`${t.name} (${t.max})`), 'คะแนนเสริม', `รวม (${maxTotal(c)})`, 'ร้อยละ', 'เกรด', 'มาเรียน%', 'ขาด', 'ลา', 'สาย'];
+  const head = ['เลขที่','รหัส','ชื่อ-สกุล', ...c.tasks.map(t=>`${t.name} (${t.max})`), 'คะแนนเสริม', `รวม (${maxTotal(c)})`, 'ร้อยละ', 'เกรด', 'มาเรียน%', 'ขาด', 'ลากิจ', 'ลาป่วย', 'สาย', 'กิจกรรม'];
   const rows = sortedStudents(c).map(s=>{ const st=statOf(c,s);
-    return [s.no, s.code, s.name, ...c.tasks.map(t=>c.scores[t.id]?.[s.id] ?? ''), st.bonus, r1(st.total), r1(st.pct), st.ms?'มส':(st.grade??''), st.att.pct==null?'':r1(st.att.pct), st.att.A, st.att.L, st.att.S]; });
+    return [s.no, s.code, s.name, ...c.tasks.map(t=>c.scores[t.id]?.[s.id] ?? ''), st.bonus, r1(st.total), r1(st.pct), st.ms?'มส':(st.grade??''), st.att.pct==null?'':r1(st.att.pct), st.att.A, st.att.L, st.att.H, st.att.S, st.att.E]; });
   const csv = '﻿' + [head, ...rows].map(r=>r.map(q).join(',')).join('\r\n');
   download(`คะแนน_${c.name.replace(/[\\/:*?"<>|]/g,'-')}_${today()}.csv`, csv, 'text/csv;charset=utf-8')
     .then(ok=>{ if(ok) toast('ส่งออกไฟล์แล้ว เปิดด้วย Excel ได้ทันที'); });

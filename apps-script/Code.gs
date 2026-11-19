@@ -35,7 +35,7 @@ function ss_() { return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID)
 
 const DATA_SHEET = '_data';      // ชีตเก็บข้อมูลดิบ (ซ่อนไว้) — อย่าแก้ไขด้วยมือ
 const CHUNK = 45000;             // 1 เซลล์เก็บได้ไม่เกิน 50,000 ตัวอักษร
-const ATT = {P: 'มา', A: 'ขาด', L: 'ลา', S: 'สาย'};
+const ATT = {P: 'มา', S: 'สาย', A: 'ขาด', L: 'ลากิจ', H: 'ลาป่วย', E: 'กิจกรรม'};
 
 function doGet() {
   return out_({ok: true, app: 'scorebook', hint: 'ใช้ POST จากหน้าเว็บสมุดคะแนน'});
@@ -214,7 +214,7 @@ function writeReadable_(ss, c) {
 
   // --- คะแนน ---
   const head = ['เลขที่', 'รหัส', 'ชื่อ-สกุล'].concat(tasks.map(t => t.name + ' (' + t.max + ')'),
-    ['คะแนนเสริม', 'รวม (' + max + ')', 'ร้อยละ', 'เกรด', 'มาเรียน %', 'ขาด', 'ลา', 'สาย']);
+    ['คะแนนเสริม', 'รวม (' + max + ')', 'ร้อยละ', 'เกรด', 'มาเรียน %', 'ขาด', 'ลากิจ', 'ลาป่วย', 'สาย', 'กิจกรรม']);
   const body = students.map(s => {
     let raw = 0;
     const cells = tasks.map(t => {
@@ -225,13 +225,13 @@ function writeReadable_(ss, c) {
     const bonus = (c.bonus || []).filter(b => b.sid === s.id).reduce((a, b) => a + (+b.pts || 0), 0);
     const total = raw + bonus;
     const pct = max ? Math.min(100, total / max * 100) : 0;
-    const att = {P: 0, A: 0, L: 0, S: 0, n: 0};
-    dates.forEach(d => { const x = c.attendance[d][s.id]; if (x) { att[x]++; att.n++; } });
-    const attPct = att.n ? (att.P + att.S) / att.n * 100 : '';
+    const att = {P: 0, A: 0, L: 0, S: 0, H: 0, E: 0, n: 0};
+    dates.forEach(d => { const x = c.attendance[d][s.id]; if (x && att[x] != null) { att[x]++; att.n++; } });
+    const attPct = att.n ? (att.P + att.S + att.E) / att.n * 100 : '';
     const ms = attPct !== '' && attPct < 80;
     return [s.no, s.code, s.name].concat(cells,
       [bonus || '', Math.round(total * 100) / 100, Math.round(pct * 100) / 100, ms ? 'มส' : (max ? grade_(pct) : ''),
-       attPct === '' ? '' : Math.round(attPct * 10) / 10, att.A, att.L, att.S]);
+       attPct === '' ? '' : Math.round(attPct * 10) / 10, att.A, att.L, att.H, att.S, att.E]);
   });
   const sh = sheetFor_(ss, scoreName);
   sh.getRange(1, 1).setValue((c.name || '') + (c.subject ? ' · ' + c.subject : '') + '   (อัปเดตจากเว็บ ' +
@@ -243,12 +243,12 @@ function writeReadable_(ss, c) {
   sh.setColumnWidth(3, 220);
 
   // --- เช็คชื่อ ---
-  const ah = ['เลขที่', 'ชื่อ-สกุล'].concat(dates, ['มา', 'ขาด', 'ลา', 'สาย', 'มาเรียน %']);
+  const ah = ['เลขที่', 'ชื่อ-สกุล'].concat(dates, ['มา', 'สาย', 'กิจกรรม', 'ขาด', 'ลากิจ', 'ลาป่วย', 'มาเรียน %']);
   const ab = students.map(s => {
-    const n = {P: 0, A: 0, L: 0, S: 0};
-    const cells = dates.map(d => { const x = c.attendance[d][s.id]; if (x) n[x]++; return x ? ATT[x] : ''; });
-    const all = n.P + n.A + n.L + n.S;
-    return [s.no, s.name].concat(cells, [n.P, n.A, n.L, n.S, all ? Math.round((n.P + n.S) / all * 1000) / 10 : '']);
+    const n = {P: 0, A: 0, L: 0, S: 0, H: 0, E: 0};
+    const cells = dates.map(d => { const x = c.attendance[d][s.id]; if (x && n[x] != null) n[x]++; return x ? (ATT[x] || x) : ''; });
+    const all = n.P + n.A + n.L + n.S + n.H + n.E;
+    return [s.no, s.name].concat(cells, [n.P, n.S, n.E, n.A, n.L, n.H, all ? Math.round((n.P + n.S + n.E) / all * 1000) / 10 : '']);
   });
   const sa = sheetFor_(ss, attName);
   sa.getRange(1, 1, 1, ah.length).setNumberFormat('@').setValues([ah]).setFontWeight('bold').setBackground('#eef0ff');
@@ -259,7 +259,9 @@ function writeReadable_(ss, c) {
     const rng = sa.getRange(2, 3, ab.length, dates.length);
     sa.setConditionalFormatRules([
       SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('ขาด').setBackground('#fdecec').setFontColor('#dc2626').setRanges([rng]).build(),
-      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('ลา').setBackground('#e4f3fb').setFontColor('#0284c7').setRanges([rng]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('ลากิจ').setBackground('#e4f3fb').setFontColor('#0284c7').setRanges([rng]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('ลาป่วย').setBackground('#fae8ff').setFontColor('#a21caf').setRanges([rng]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('กิจกรรม').setBackground('#dcf5f1').setFontColor('#0f766e').setRanges([rng]).build(),
       SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('สาย').setBackground('#fdf3e2').setFontColor('#d97706').setRanges([rng]).build()
     ]);
   }

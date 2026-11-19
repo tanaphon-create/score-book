@@ -103,7 +103,8 @@ main{max-width:720px;margin:auto;padding:calc(20px + env(safe-area-inset-top)) 1
 .days{display:flex;gap:6px;flex-wrap:wrap}
 .day{display:flex;flex-direction:column;align-items:center;min-width:52px;padding:5px 6px;border-radius:10px;background:var(--surface-2);font-size:12px;color:var(--muted)}
 .day b{font-size:14px;margin-top:1px}
-.day.P b{color:var(--ok)}.day.A{background:var(--bad-soft)}.day.A b{color:var(--bad)}.day.L b{color:var(--info)}.day.S b{color:var(--warn)}
+.day.P b{color:var(--ok)}.day.A{background:var(--bad-soft)}.day.A b{color:var(--bad)}.day.L b{color:var(--info)}.day.S b{color:var(--warn)}.day.H b{color:#c026d3}.day.E b{color:#0d9488}
+.chip.sick{background:#fae8ff;color:#a21caf}.chip.act{background:#dcf5f1;color:#0f766e}
 .bn{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
 .bn:last-child{border-bottom:0}.bn small{color:var(--muted);display:block}
 .plus{color:var(--ok);font-weight:700}.minus{color:var(--bad);font-weight:700}
@@ -143,7 +144,7 @@ main{max-width:720px;margin:auto;padding:calc(20px + env(safe-area-inset-top)) 1
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwJsr4hqB6Xq5RRTQFFeWZ3KxaTmpXQcNg52Vn5kjouwKiX9LO9OI3TxuRU-c18e8PDuA/exec';
 const CATS = {work:'#5b4bff',ex:'#0ea5e9',quiz:'#f59e0b',mid:'#ec4899',final:'#dc2626',att:'#16a34a'};
-const ATT = {P:'มา',A:'ขาด',L:'ลา',S:'สาย'};
+const ATT = {P:'มา',S:'สาย',A:'ขาด',L:'ลากิจ',H:'ลาป่วย',E:'กิจกรรม'};
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const r1 = n => Math.round(n*100)/100;
@@ -162,9 +163,9 @@ function card(r){
   const total = raw + bonus;
   const pct = max ? Math.min(100, total/max*100) : 0;
   const grade = max ? gradeOf(pct) : null;
-  const c = {P:0,A:0,L:0,S:0}; r.attendance.forEach(a=>{ if(c[a.v]!=null) c[a.v]++; });
+  const c = {P:0,A:0,L:0,S:0,H:0,E:0}; r.attendance.forEach(a=>{ if(c[a.v]!=null) c[a.v]++; });
   const days = r.attendance.length;
-  const apct = days ? (c.P + c.S) / days * 100 : null;
+  const apct = days ? (c.P + c.S + c.E) / days * 100 : null;
   const ms = apct!=null && apct < 80;
   const gcls = grade ? 'g'+(grade==='3.5'?'3':grade==='2.5'?'2':grade==='1.5'?'1':grade) : '';
   const initial = [...String(st.name).replace(/^(ด\.ช\.|ด\.ญ\.|นาย|นางสาว|น\.ส\.|นาง)/,'').trim()][0] || '?';
@@ -183,7 +184,7 @@ function card(r){
         <b class="${has?'':'none'}">${has?fmt(+t.score)+' / '+fmt(+t.max):'ยังไม่มีคะแนน'}</b><div class="bar"><span style="width:${p}%"></span></div></div>`; }).join('') : '<span style="color:var(--muted)">ยังไม่มีงาน</span>'}
     </div>
     <div class="sec"><h3>การมาเรียน <span>${days?days+' วัน':''}</span></h3>
-      ${days ? `<div class="chips"><span class="chip ${apct<80?'bad':'ok'}">มาเรียน ${fmt(apct)}%</span><span class="chip ok">มา ${c.P}</span><span class="chip warn">สาย ${c.S}</span><span class="chip info">ลา ${c.L}</span><span class="chip bad">ขาด ${c.A}</span></div>
+      ${days ? `<div class="chips"><span class="chip ${apct<80?'bad':'ok'}">มาเรียน ${fmt(apct)}%</span><span class="chip ok">มา ${c.P}</span><span class="chip warn">สาย ${c.S}</span>${c.E?`<span class="chip act">กิจกรรม ${c.E}</span>`:''}<span class="chip info">ลากิจ ${c.L}</span>${c.H?`<span class="chip sick">ลาป่วย ${c.H}</span>`:''}<span class="chip bad">ขาด ${c.A}</span></div>
       <div class="days">${r.attendance.slice(-40).map(a=>`<div class="day ${a.v}">${fmtDate(a.d)}<b>${ATT[a.v]||a.v}</b></div>`).join('')}</div>` : '<span style="color:var(--muted)">ยังไม่มีข้อมูลเช็คชื่อ</span>'}
     </div>
     <div class="sec"><h3>คะแนนเสริม <span>${r.bonus.length?'รวม '+(bonus>0?'+':'')+fmt(bonus):''}</span></h3>
