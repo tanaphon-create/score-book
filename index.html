@@ -162,6 +162,7 @@ table.grid{border-collapse:separate;border-spacing:0;width:100%;font-size:14.5px
 .seg button[aria-pressed="true"].S{background:var(--warn);color:#fff}
 .seg button[aria-pressed="true"].H{background:var(--sick);color:#fff}
 .seg button[aria-pressed="true"].E{background:var(--act);color:#fff}
+html[data-mono]{filter:grayscale(1)}
 :root{--sick:#c026d3;--sick-soft:#fae8ff;--act:#0d9488;--act-soft:#dcf5f1}
 .att-legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:-4px 0 10px;font-size:13px;color:var(--muted)}
 .att-legend span{display:inline-flex;align-items:center;gap:6px}
@@ -582,7 +583,8 @@ nav.tabs button:hover{color:var(--tc)}
     </div></section>
     <section><h3>🎨 การแสดงผล</h3><div class="sgrid">
       <button data-act="theme"><b>◐</b><span>สลับโหมดมืด/สว่าง</span></button>
-      <button data-act="fest"><b>🎨</b><span>ธีมทั้งเว็บ<small>เทศกาล · ฤดูร้อน · กลางคืน · ฝน · สงคราม</small></span></button>
+      <button data-act="mono"><b>◑</b><span>โหมดขาวดำ<small id="monoState">ปิดอยู่ · เฉพาะเครื่องนี้</small></span></button>
+      <button data-act="fest"><b>🎨</b><span>ธีมทั้งเว็บ<small>เทศกาล · ฤดูร้อน · กลางคืน · ฝน · สงคราม · ขาวดำ</small></span></button>
     </div></section>
     <section class="danger-zone"><div class="sgrid">
       <button data-act="delClass" class="danger"><b>🗑</b><span>ลบห้องนี้</span></button>
@@ -1989,7 +1991,7 @@ function imageExportDialog(){
 function festDialog(){
   if(!window.GCFest){ toast('ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง'); return; }
   const cur = GCFest.get().mode;
-  const opts = [['auto','📅 อัตโนมัติ','เปลี่ยนเองตามเทศกาล (ลอยกระทง 17–25 พ.ย.)'],['loykrathong','🪷 ลอยกระทง','พระจันทร์ โคมลอย กระทงลอยน้ำ'],['summer','☀️ ฤดูร้อน','แดดสดใส ทะเล ต้นมะพร้าว นกนางนวล'],['night','🌙 กลางคืน','ดาวเต็มฟ้า จันทร์เสี้ยว หิ่งห้อย'],['rain','☔ ฝนพรำ','เม็ดฝน เมฆครึ้ม แอ่งน้ำ'],['war','⚔️ สงคราม','ทหารผีน้อย เครื่องบิน รถถัง'],['off','🚫 ปิด','หน้าตาปกติ']];
+  const opts = [['auto','📅 อัตโนมัติ','เปลี่ยนเองตามเทศกาล (ลอยกระทง 17–25 พ.ย.)'],['loykrathong','🪷 ลอยกระทง','พระจันทร์ โคมลอย กระทงลอยน้ำ'],['summer','☀️ ฤดูร้อน','แดดสดใส ทะเล ต้นมะพร้าว นกนางนวล'],['night','🌙 กลางคืน','ดาวเต็มฟ้า จันทร์เสี้ยว หิ่งห้อย'],['rain','☔ ฝนพรำ','เม็ดฝน เมฆครึ้ม แอ่งน้ำ'],['war','⚔️ สงคราม','ทหารผีน้อย เครื่องบิน รถถัง'],['mono','🎬 ขาวดำ','ทั้งเว็บขาวดำ แบบหนังเก่า'],['off','🚫 ปิด','หน้าตาปกติ']];
   openDialog(`<h2>ธีมทั้งเว็บ</h2><p class="hint" style="margin-top:0">เฉพาะครูเปลี่ยนได้ · ใช้กับทุกหน้า: สมุดคะแนน เกมคำถาม โหมดห้องเรียน มือถือนักเรียน และ INTRO</p>
     <div class="fest-list">${opts.map(([k,t,d])=>`<label class="fest-it"><input type="radio" name="fest" value="${k}" ${k===cur?'checked':''}><span><b>${t}</b><small>${d}</small></span></label>`).join('')}</div>
     <div class="dlg-foot"><button type="button" class="btn left" data-close>ยกเลิก</button><button class="btn pri">บันทึก</button></div>`,
@@ -2140,6 +2142,7 @@ document.addEventListener('click', e=>{
     case 'backup': backup(); break;
     case 'print': window.print(); break;
     case 'fest': { closeMenu(); festDialog(); break; }
+    case 'mono': setMono(!document.documentElement.hasAttribute('data-mono'), true); break;
     case 'theme': {
       const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
       r.dataset.theme = dark?'light':'dark'; try{localStorage.setItem('scorebook.theme', r.dataset.theme)}catch(e){} break; }
@@ -2206,6 +2209,13 @@ document.addEventListener('focusout', e=>{
 
 /* ================= boot ================= */
 try{ const th=localStorage.getItem('scorebook.theme'); if(th) document.documentElement.dataset.theme=th; }catch(e){}
+// โหมดขาวดำ: ทั้งหน้าเป็นสีเทา ใช้ร่วมกับโหมดมืด/สว่างได้ (จำไว้ในเครื่องนี้)
+function setMono(on, save){
+  document.documentElement.toggleAttribute('data-mono', on);
+  const st=document.getElementById('monoState'); if(st) st.textContent = (on?'เปิดอยู่':'ปิดอยู่')+' · เฉพาะเครื่องนี้';
+  if(save){ try{ localStorage.setItem('scorebook.mono', on?'1':'0'); }catch(e){} }
+}
+try{ setMono(localStorage.getItem('scorebook.mono')==='1'); }catch(e){}
 if(!S.cur && S.classes[0]) S.cur = S.classes[0].id;
 render(); animateView();
 setStatus('local');
@@ -2230,6 +2240,6 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
-<script src="../quiz-live/js/festival.js?v=20261119b" defer></script>
+<script src="../quiz-live/js/festival.js?v=20261120a" defer></script>
 </body>
 </html>
