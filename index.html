@@ -460,6 +460,40 @@ html.sheet-lock,html.sheet-lock body{overflow:hidden}
 .rand-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .rand-chips .mchip{--gc:var(--brand)}
 .rand-members .rand-chips{justify-content:center}
+/* สุ่มชื่อ: โหมด + วงล้อ + ขยายเต็มจอ */
+.rand-mode{display:flex;gap:6px;margin:0 0 12px;padding:4px;border-radius:14px;background:var(--surface-2)}
+.rand-mode button{flex:1;border:0;border-radius:10px;padding:9px 10px;background:transparent;color:var(--muted);font:inherit;font-weight:700;cursor:pointer}
+.rand-mode button.on{background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(0,0,40,.12)}
+.wheel-wrap{display:grid;place-items:center;margin-bottom:10px}
+.wheel-stage{position:relative;width:min(340px,78vw);aspect-ratio:1}
+.wheel-stage canvas{width:100%;height:100%;display:block;filter:drop-shadow(0 10px 22px rgba(40,30,90,.25))}
+.wheel-ptr{position:absolute;left:50%;top:-6px;translate:-50% 0;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid #FF4D6D;filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))}
+.wheel-hub{position:absolute;left:50%;top:50%;translate:-50% -50%;width:18%;aspect-ratio:1;border-radius:50%;background:#fff;border:5px solid #2B2350;display:grid;place-items:center;font-size:clamp(18px,4vw,40px)}
+.wheel-say{position:absolute;left:50%;top:14%;translate:-50% 0;padding:8px 16px;border-radius:999px;background:#2B2350;color:#fff;font-weight:700;white-space:nowrap;opacity:0;transform:scale(.6);transition:opacity .2s,transform .25s;pointer-events:none;font-size:clamp(14px,2.2vw,26px)}
+.wheel-say.on{opacity:1;transform:scale(1)}
+.wheel-opts{display:grid;gap:8px;margin-bottom:6px}
+.wheel-w summary{cursor:pointer;font-weight:700;padding:6px 0}
+#wheelW{display:grid;gap:4px;max-height:220px;overflow:auto;margin-top:6px}
+.ww-row{display:grid;grid-template-columns:1fr auto 44px auto;gap:6px;align-items:center;font-size:14px}
+.ww-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ww-row .btn{min-width:36px;padding:4px 8px}
+.ww-row b{text-align:center}
+dialog.rand-big{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0;border:0;display:flex;flex-direction:column}
+dialog.rand-big::backdrop{background:rgba(10,8,30,.75)}
+dialog.rand-big > form{flex:1;display:flex;flex-direction:column;justify-content:center;width:min(1200px,100%);margin:0 auto}
+dialog.rand-big h2{font-size:clamp(22px,3vw,36px);text-align:center}
+dialog.rand-big .rand{padding:clamp(24px,5vh,60px) 16px}
+dialog.rand-big .rand-name{font-size:clamp(48px,9vw,140px);line-height:1.2}
+dialog.rand-big .rand-sub{font-size:clamp(18px,2.4vw,32px)}
+dialog.rand-big .rand-opt,dialog.rand-big .rand-done,dialog.rand-big .wheel-opts{display:none}
+dialog.rand-big .rand-members .mchip{font-size:clamp(16px,2vw,26px)}
+dialog.rand-big .dlg-foot .btn{font-size:18px;padding:12px 20px}
+dialog.rand-big.rand-wheel > form{display:grid;grid-template-columns:auto minmax(280px,1fr);grid-template-areas:"h h" "m m" "w r" "f f";align-content:center;gap:10px 30px}
+dialog.rand-big.rand-wheel h2{grid-area:h}dialog.rand-big.rand-wheel .rand-mode{grid-area:m;max-width:420px;justify-self:center;width:100%}
+dialog.rand-big.rand-wheel .wheel-wrap{grid-area:w}dialog.rand-big.rand-wheel .rand{grid-area:r;align-self:center}dialog.rand-big.rand-wheel .dlg-foot{grid-area:f}
+dialog.rand-big.rand-wheel .wheel-stage{width:min(72dvh,56vw)}
+dialog.rand-big.rand-wheel .rand-name{font-size:clamp(40px,6vw,110px)}
+@media (max-width:760px){dialog.rand-big.rand-wheel > form{grid-template-columns:1fr;grid-template-areas:"h" "m" "w" "r" "f"}dialog.rand-big.rand-wheel .wheel-stage{width:min(88vw,52dvh)}}
 /* ---------- หน้าเข้าสู่ระบบครู ---------- */
 .gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:var(--bg,#0f0b24);background-image:radial-gradient(900px 600px at 15% 10%,rgba(124,92,255,.35),transparent 60%),radial-gradient(800px 600px at 90% 90%,rgba(56,189,248,.25),transparent 60%)}
 .quiz-btn{text-decoration:none;gap:6px;white-space:nowrap;background:linear-gradient(90deg,#FF6F91,#FF9F43);color:#fff;border-color:transparent;font-weight:600}
@@ -1389,42 +1423,174 @@ function spinner(items, label, onWin){
   };
   tick();
 }
+// ── ขยายเต็มจอ (ใช้ทั้งสุ่มชื่อ สุ่มกลุ่ม วงล้อ) ──
+function randBigBtn(){ return `<button type="button" class="btn" id="randBig" title="ขยายให้ทั้งห้องเห็นบนจอ">🖥️ ขยาย</button>`; }
+function wireRandBig(onResize){
+  const b = document.getElementById('randBig'); if(!b) return;
+  const set = on => { dlg.classList.toggle('rand-big', on); b.textContent = on ? '↩️ ย่อ' : '🖥️ ขยาย'; onResize && onResize(); };
+  b.addEventListener('click', ()=> set(!dlg.classList.contains('rand-big')));
+  dlg.addEventListener('close', ()=> dlg.classList.remove('rand-big'), {once:true});
+}
+// ── เสียงติ๊กวงล้อ (สังเคราะห์ ไม่ต้องโหลดไฟล์) ──
+let wheelAC = null;
+function wheelSound(kind){
+  try{
+    wheelAC = wheelAC || new (window.AudioContext||window.webkitAudioContext)();
+    const ac = wheelAC, t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    const cfg = { tick:[1400,.03,.05,'square'], boing:[220,.35,.12,'sine'], win:[880,.5,.12,'triangle'], huh:[300,.25,.08,'sawtooth'] }[kind];
+    o.type = cfg[3]; o.frequency.setValueAtTime(cfg[0], t);
+    if(kind==='boing') o.frequency.exponentialRampToValueAtTime(660, t+cfg[1]);
+    if(kind==='huh') o.frequency.exponentialRampToValueAtTime(180, t+cfg[1]);
+    if(kind==='win'){ o.frequency.setValueAtTime(660,t); o.frequency.setValueAtTime(880,t+.12); o.frequency.setValueAtTime(1320,t+.24); }
+    g.gain.setValueAtTime(cfg[2], t); g.gain.exponentialRampToValueAtTime(.0001, t+cfg[1]);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+cfg[1]+.05);
+  }catch(e){}
+}
+const shortName = n => String(n||'').replace(/^(นางสาว|นาง|นาย|เด็กหญิง|เด็กชาย|ด\.ญ\.|ด\.ช\.|ด\.ส\.|น\.ส\.)\s*/,'').split(/\s+/)[0];
+const WHEEL_COLORS = ['#FF8FB1','#FFC94D','#7FD8BE','#8FB8FF','#C3A6FF','#FFA877','#9BE07A','#FF9CE0','#6FD3F0','#FFD98A'];
+
 function randomDialog(){
   const c = C(); if(!c) return;
   const day = c.attendance[today()] || {};
   const all = sortedStudents(c).filter(s => s.name && !['A','L','H','E'].includes(day[s.id]));
   if(!all.length){ toast('ยังไม่มีนักเรียนให้สุ่ม'); return; }
-  const key = 'stu:' + c.id;
-  let done = randMem(key), picked = null;
-  let noRepeat = (()=>{ try{ return localStorage.getItem('scorebook.randNoRepeat') !== '0'; }catch(e){ return true; } })();
+  const key = 'stu:' + c.id, WKEY = 'scorebook.wheelW.' + c.id;
+  let done = randMem(key), picked = null, busy = false;
+  const ls = (k, d) => { try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch(e){ return d; } };
+  const lsSet = (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} };
+  let noRepeat = ls('scorebook.randNoRepeat','1') !== '0';
+  let mode = ls('scorebook.randMode','names');
+  let tease = ls('scorebook.wheelTease','1') !== '0';
+  let weights = (()=>{ try{ return JSON.parse(ls(WKEY,'{}')) || {}; }catch(e){ return {}; } })();
+  const W = s => weights[s.id] || 1;
   const pool = () => noRepeat ? all.filter(s=>!done.has(s.id)) : all;
   openDialog(`<h2>🎲 สุ่มชื่อนักเรียน</h2>
+    <div class="seg rand-mode" role="tablist"><button type="button" data-mode="names" role="tab">🎲 สุ่มชื่อ</button><button type="button" data-mode="wheel" role="tab">🎡 วงล้อ</button></div>
+    <div class="wheel-wrap" id="wheelWrap" hidden><div class="wheel-stage"><canvas id="wheelCv" width="800" height="800" aria-label="วงล้อสุ่มชื่อ"></canvas><div class="wheel-ptr" aria-hidden="true"></div><div class="wheel-hub" aria-hidden="true">🎡</div><div class="wheel-say" id="wheelSay" aria-live="polite"></div></div></div>
     <div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub"></div></div>
+    <div class="wheel-opts" id="wheelOpts" hidden>
+      <label class="field-chk"><input type="checkbox" id="wheelTease" ${tease?'checked':''}> <span><b>โหมดกวน 😜</b> — วงล้อแกล้งหยุดผิดช่อง แล้วหมุนย้อนกลับ</span></label>
+      <details class="wheel-w"><summary>⚖️ ปรับขนาดช่อง (ช่องใหญ่ = โอกาสถูกสุ่มมากขึ้น)</summary><div id="wheelW"></div><button type="button" class="btn" id="wheelWReset" style="margin-top:8px">↺ ทุกคนเท่ากัน</button></details>
+    </div>
     <label class="field-chk rand-opt"><input type="checkbox" id="randNoRep" ${noRepeat?'checked':''}> <span><b>ตัดคนที่ถูกสุ่มแล้วออก</b> — ไม่ให้ชื่อซ้ำจนกว่าจะครบทุกคน</span></label>
     <div class="rand-done" id="randDone"></div>
-    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button><button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 คะแนน</button><button type="button" class="btn pri" id="randGo">สุ่มเลย</button></div>`,
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>${randBigBtn()}<button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 คะแนน</button><button type="button" class="btn pri" id="randGo">สุ่มเลย</button></div>`,
     ()=>false);
-  const go=document.getElementById('randGo'), give=document.getElementById('randGive'), reset=document.getElementById('randReset');
+  const $i = id => document.getElementById(id);
+  const go=$i('randGo'), give=$i('randGive'), reset=$i('randReset'), cv=$i('wheelCv'), say=$i('wheelSay');
+  let rot = 0, slices = [];
+  const layout = () => { const p = pool(); const tot = p.reduce((a,s)=>a+W(s),0) || 1; let a = 0; slices = p.map((s,i)=>{ const w = W(s)/tot*Math.PI*2; const sl = {s, a0:a, a1:a+w, col:WHEEL_COLORS[i%WHEEL_COLORS.length]}; a += w; return sl; }); };
+  const at = r => { const th = ((-Math.PI/2 - r) % (Math.PI*2) + Math.PI*4) % (Math.PI*2); return slices.findIndex(x=>th>=x.a0 && th<x.a1); };
+  const draw = (hi=-1) => {
+    const g = cv.getContext('2d'), N = cv.width, R = N/2 - 6;
+    g.clearRect(0,0,N,N); g.save(); g.translate(N/2,N/2); g.rotate(rot);
+    if(!slices.length){ g.restore(); return; }
+    slices.forEach((x,i)=>{
+      g.beginPath(); g.moveTo(0,0); g.arc(0,0,R,x.a0,x.a1); g.closePath();
+      g.fillStyle = x.col; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke();
+      if(i===hi){ g.fillStyle='rgba(255,255,255,.35)'; g.fill(); }
+      const span = x.a1 - x.a0, fs = Math.max(10, Math.min(30, span*R*0.55));
+      if(span*R < 9) return;
+      g.save(); g.rotate((x.a0+x.a1)/2); g.textAlign='right'; g.textBaseline='middle'; g.fillStyle='#2B2350';
+      g.font = `700 ${fs}px 'IBM Plex Sans Thai Looped','Noto Sans Thai',system-ui,sans-serif`;
+      let t = `${x.s.no ? x.s.no + ' ' : ''}${shortName(x.s.name)}`; const maxW = R*0.68;
+      while(g.measureText(t).width > maxW && t.length > 2) t = t.slice(0,-1);
+      g.fillText(t, R-14, 1); g.restore();
+    });
+    g.restore();
+    g.beginPath(); g.arc(N/2,N/2,R,0,Math.PI*2); g.lineWidth = 8; g.strokeStyle = '#2B2350'; g.stroke();
+  };
+  const talk = (t, ms=1400) => { say.textContent = t; say.classList.add('on'); clearTimeout(talk.h); talk.h = setTimeout(()=>say.classList.remove('on'), ms); };
+  const animate = (from, to, ms, ease) => new Promise(res => {
+    const t0 = performance.now(); let lastI = at(from);
+    const step = now => {
+      const p = Math.min(1, (now - t0)/ms); rot = from + (to - from)*ease(p);
+      const i = at(rot); if(i !== lastI){ lastI = i; wheelSound('tick'); }
+      draw(); if(p < 1) requestAnimationFrame(step); else res();
+    };
+    if(calm()){ rot = to; draw(); res(); } else requestAnimationFrame(step);
+  });
+  const outCubic = p => 1 - Math.pow(1-p,3), inOut = p => p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+  const wait = ms => new Promise(r=>setTimeout(r, calm()?0:ms));
+  const rotFor = (phi, base, turns) => { const target = -Math.PI/2 - phi; let d = ((target - base) % (Math.PI*2) + Math.PI*4) % (Math.PI*2); return base + turns*Math.PI*2 + d; };
+  const inside = (x, f) => x.a0 + (x.a1 - x.a0) * f;
+  async function spinWheel(){
+    layout(); if(!slices.length) return null;
+    const tot = slices.reduce((a,x)=>a+(x.a1-x.a0),0); let r = Math.random()*tot, wi = 0;
+    for(let i=0;i<slices.length;i++){ r -= (slices[i].a1-slices[i].a0); if(r<=0){ wi=i; break; } }
+    const win = slices[wi], n = slices.length;
+    const roll = Math.random();
+    const plan = !tease || n < 2 ? 'none' : roll < .4 ? 'back' : roll < .75 ? 'creep' : roll < .88 ? 'double' : 'none';
+    const turns = 5 + Math.floor(Math.random()*3);
+    if(plan === 'back'){            // เลยไปช่องถัดไป แล้วหมุนย้อนกลับ
+      const nb = slices[(wi - 1 + n) % n];
+      await animate(rot, rotFor(inside(nb, .5), rot, turns), 5200, outCubic);
+      talk('ได้แล้ว… เอ๊ะ?!', 1200); wheelSound('huh'); await wait(1100);
+      talk('⏪ หมุนกลับ~', 1300); await animate(rot, rotFor(inside(win, .5), rot, 0) - Math.PI*2, 1500, inOut);
+    } else if(plan === 'creep'){    // หยุดก่อนถึง แล้วค่อย ๆ คืบไป
+      const nb = slices[(wi + 1) % n];
+      await animate(rot, rotFor(inside(nb, .25), rot, turns), 5000, outCubic);
+      talk('จบแล้ว?', 1000); await wait(1200);
+      talk('ยังงง~ คืบไปอีกนิด 🐌', 1500); wheelSound('boing'); await animate(rot, rotFor(inside(win, .5), rot, 0), 2000, inOut);
+    } else if(plan === 'double'){   // ทำเป็นหยุด แล้วหมุนต่ออีกรอบ
+      await animate(rot, rot + Math.PI*2*3 + Math.random(), 3200, outCubic);
+      talk('ล้อเล่น! หมุนต่อ 😜', 1300); wheelSound('boing'); await wait(700);
+      await animate(rot, rotFor(inside(win, .3 + Math.random()*.4), rot, 3), 3800, outCubic);
+    } else {
+      await animate(rot, rotFor(inside(win, .2 + Math.random()*.6), rot, turns), 5200, outCubic);
+    }
+    draw(wi); wheelSound('win');
+    return win.s;
+  }
+  const drawW = () => {
+    $i('wheelW').innerHTML = all.map(s=>`<div class="ww-row"><span>${esc(s.no)}. ${esc(s.name)}</span><button type="button" class="btn" data-w="${s.id}" data-d="-1" aria-label="ลดช่อง ${esc(s.name)}">−</button><b>×${W(s)}</b><button type="button" class="btn" data-w="${s.id}" data-d="1" aria-label="ขยายช่อง ${esc(s.name)}">+</button></div>`).join('');
+  };
   const info = () => {
     const left = pool().length;
-    document.getElementById('randSub').textContent = picked ? 'เลขที่ ' + picked.no : (noRepeat ? `เหลือ ${left} จาก ${all.length} คน` : `${all.length} คน`) + ' (ไม่รวมคนที่ขาด/ลา/ไปกิจกรรมวันนี้)';
+    if(!busy) $i('randSub').textContent = picked ? 'เลขที่ ' + picked.no : (noRepeat ? `เหลือ ${left} จาก ${all.length} คน` : `${all.length} คน`) + ' (ไม่รวมคนที่ขาด/ลา/ไปกิจกรรมวันนี้)';
     const list = all.filter(s=>done.has(s.id));
-    document.getElementById('randDone').innerHTML = noRepeat && list.length ? `<div class="hint">ถูกสุ่มแล้ว ${list.length} คน (แตะชื่อเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(s=>`<button type="button" class="mchip" data-back="${s.id}">${esc(s.no)}. ${esc(s.name)} ↩</button>`).join('')}</div>` : '';
-    reset.disabled = !done.size;
-    if(noRepeat && !left){ go.disabled = true; go.textContent = 'สุ่มครบทุกคนแล้ว'; } else { go.disabled = false; if(go.textContent==='สุ่มครบทุกคนแล้ว') go.textContent = 'สุ่มเลย'; }
+    $i('randDone').innerHTML = noRepeat && list.length ? `<div class="hint">ถูกสุ่มแล้ว ${list.length} คน (แตะชื่อเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(s=>`<button type="button" class="mchip" data-back="${s.id}">${esc(s.no)}. ${esc(s.name)} ↩</button>`).join('')}</div>` : '';
+    reset.disabled = !done.size || busy;
+    if(noRepeat && !left){ go.disabled = true; go.textContent = 'สุ่มครบทุกคนแล้ว'; } else if(!busy){ go.disabled = false; if(go.textContent==='สุ่มครบทุกคนแล้ว') go.textContent = mode==='wheel' ? '🎡 หมุนเลย' : 'สุ่มเลย'; }
+    if(mode==='wheel' && !busy){ if(!picked || !slices.length) layout(); draw(picked ? slices.findIndex(x=>x.s===picked) : -1); }
   };
-  info();
-  go.addEventListener('click', ()=>{
-    const items = pool(); if(!items.length) return;
-    go.disabled = give.disabled = true; picked = null;
-    spinner(items, s=>[s.name, 'เลขที่ ' + s.no], s=>{
-      picked = s; if(noRepeat){ done.add(s.id); randSave(key, done); }
-      give.disabled = false; go.textContent = 'สุ่มอีกครั้ง'; info();
-    });
+  const setMode = m => {
+    mode = m; lsSet('scorebook.randMode', m);
+    document.querySelectorAll('.rand-mode [data-mode]').forEach(b=>b.classList.toggle('on', b.dataset.mode===m));
+    $i('wheelWrap').hidden = $i('wheelOpts').hidden = m !== 'wheel';
+    dlg.classList.toggle('rand-wheel', m==='wheel');
+    if(!go.disabled) go.textContent = m==='wheel' ? '🎡 หมุนเลย' : 'สุ่มเลย';
+    if(m==='wheel') drawW();
+    info();
+  };
+  setMode(mode);
+  wireRandBig(()=>info());
+  dlg.addEventListener('close', ()=> dlg.classList.remove('rand-wheel'), {once:true});
+  const finish = s => {
+    busy = false; picked = s; if(noRepeat){ done.add(s.id); randSave(key, done); }
+    const box = $i('randBox'); $i('randName').textContent = s.name; box.classList.add('win'); confetti(box);
+    give.disabled = false; go.disabled = false; go.textContent = mode==='wheel' ? '🎡 หมุนอีกครั้ง' : 'สุ่มอีกครั้ง';
+    document.querySelectorAll('.rand-mode button').forEach(b=>b.disabled=false); info();
+  };
+  go.addEventListener('click', async ()=>{
+    const items = pool(); if(!items.length || busy) return;
+    busy = true; go.disabled = give.disabled = reset.disabled = true; picked = null;
+    document.querySelectorAll('.rand-mode button').forEach(b=>b.disabled=true);
+    $i('randBox').classList.remove('win');
+    if(mode === 'wheel'){
+      $i('randName').textContent = '🎡 กำลังหมุน…'; $i('randSub').textContent = 'ลุ้น ๆ';
+      const s = await spinWheel(); if(s) finish(s);
+    } else {
+      spinner(items, s=>[s.name, 'เลขที่ ' + s.no], s=> finish(s));
+    }
   });
-  document.getElementById('randNoRep').addEventListener('change', e=>{ noRepeat = e.target.checked; try{ localStorage.setItem('scorebook.randNoRepeat', noRepeat?'1':'0'); }catch(_){} picked=null; info(); });
-  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; document.getElementById('randName').textContent = 'พร้อมไหม?'; info(); });
-  document.getElementById('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b) return; done.delete(b.dataset.back); randSave(key, done); info(); });
+  document.querySelector('.rand-mode').addEventListener('click', e=>{ const b = e.target.closest('[data-mode]'); if(b && !busy) setMode(b.dataset.mode); });
+  $i('wheelTease').addEventListener('change', e=>{ tease = e.target.checked; lsSet('scorebook.wheelTease', tease?'1':'0'); });
+  $i('wheelW').addEventListener('click', e=>{ const b = e.target.closest('[data-w]'); if(!b) return; const steps=[.5,1,1.5,2,3,4,5]; const s = all.find(x=>x.id===b.dataset.w); let i = steps.indexOf(W(s)); if(i<0) i=1; i = Math.max(0, Math.min(steps.length-1, i + +b.dataset.d)); if(steps[i]===1) delete weights[s.id]; else weights[s.id]=steps[i]; lsSet(WKEY, JSON.stringify(weights)); drawW(); layout(); draw(); info(); });
+  $i('wheelWReset').addEventListener('click', ()=>{ weights = {}; lsSet(WKEY, '{}'); drawW(); layout(); draw(); info(); });
+  $i('randNoRep').addEventListener('change', e=>{ noRepeat = e.target.checked; lsSet('scorebook.randNoRepeat', noRepeat?'1':'0'); picked=null; layout(); info(); });
+  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; $i('randName').textContent = 'พร้อมไหม?'; $i('randBox').classList.remove('win'); layout(); info(); });
+  $i('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b) return; done.delete(b.dataset.back); randSave(key, done); if(!picked) layout(); info(); });
   give.addEventListener('click', ()=>{ if(picked){ closeDialog(); addBonus(picked.id, 1, 'สุ่มตอบคำถาม'); } });
 }
 
@@ -1444,8 +1610,9 @@ function randomGroupDialog(){
     <div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub"></div></div>
     <div class="rand-members" id="rgMembers"></div>
     <div class="rand-done" id="randDone"></div>
-    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button><button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 ทั้งกลุ่ม</button><button type="button" class="btn pri" id="randGo">สุ่มกลุ่ม</button></div>`,
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>${randBigBtn()}<button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 ทั้งกลุ่ม</button><button type="button" class="btn pri" id="randGo">สุ่มกลุ่ม</button></div>`,
     ()=>false);
+  wireRandBig();
   const go=document.getElementById('randGo'), give=document.getElementById('randGive'), reset=document.getElementById('randReset');
   const info = () => {
     const left = pool().length, total = groups().length;
