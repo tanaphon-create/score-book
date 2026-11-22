@@ -2004,7 +2004,7 @@ function imageExportDialog(){
 function festDialog(){
   if(!window.GCFest){ toast('ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง'); return; }
   const cur = GCFest.get().mode;
-  const opts = [['auto','📅 อัตโนมัติ','เปลี่ยนเองตามเทศกาล (ลอยกระทง 17–25 พ.ย.)'],['loykrathong','🪷 ลอยกระทง','พระจันทร์ โคมลอย กระทงลอยน้ำ'],['summer','☀️ ฤดูร้อน','แดดสดใส ทะเล ต้นมะพร้าว นกนางนวล'],['night','🌙 กลางคืน','ดาวเต็มฟ้า จันทร์เสี้ยว หิ่งห้อย'],['rain','☔ ฝนพรำ','เม็ดฝน เมฆครึ้ม แอ่งน้ำ'],['war','⚔️ สงคราม','ทหารผีน้อย เครื่องบิน รถถัง'],['mono','🎬 ขาวดำ','ทั้งเว็บขาวดำ แบบหนังเก่า'],['off','🚫 ปิด','หน้าตาปกติ']];
+  const opts = [['auto','📅 อัตโนมัติ','เปลี่ยนเองตามเทศกาล (ลอยกระทง 17–25 พ.ย.)'],['loykrathong','🪷 ลอยกระทง','พระจันทร์ โคมลอย กระทงลอยน้ำ'],['summer','☀️ ฤดูร้อน','แดดสดใส ทะเล ต้นมะพร้าว นกนางนวล'],['night','🌙 กลางคืน','ดาวเต็มฟ้า จันทร์เสี้ยว หิ่งห้อย'],['rain','☔ ฝนพรำ','เม็ดฝน เมฆครึ้ม แอ่งน้ำ'],['war','⚔️ สงคราม','ทหารผีน้อย เครื่องบิน รถถัง'],['mono','🎬 ขาวดำ','ทั้งเว็บขาวดำ แบบหนังเก่า'],['plain','🤍 เรียบง่าย','พื้นเรียบ สบายตา ไม่มีลูกเล่น'],['off','🚫 ปิด','หน้าตาปกติ']];
   openDialog(`<h2>ธีมทั้งเว็บ</h2><p class="hint" style="margin-top:0">เฉพาะครูเปลี่ยนได้ · ใช้กับทุกหน้า: สมุดคะแนน เกมคำถาม โหมดห้องเรียน มือถือนักเรียน และ INTRO</p>
     <div class="fest-list">${opts.map(([k,t,d])=>`<label class="fest-it"><input type="radio" name="fest" value="${k}" ${k===cur?'checked':''}><span><b>${t}</b><small>${d}</small></span></label>`).join('')}</div>
     <div class="dlg-foot"><button type="button" class="btn left" data-close>ยกเลิก</button><button class="btn pri">บันทึก</button></div>`,
@@ -2255,6 +2255,6 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
-<script src="../quiz-live/js/festival.js?v=20261120a" defer></script>
+<script src="../quiz-live/js/festival.js?v=20261122a" defer></script>
 </body>
 </html>
