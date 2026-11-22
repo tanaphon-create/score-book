@@ -66,6 +66,11 @@ function doPost(e) {
       lock.waitLock(25000);
       try { return out_(addBonus_(p)); } finally { lock.releaseLock(); }
     }
+    if (p.action === 'setexam') {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(25000);
+      try { return out_(setExam_(p)); } finally { lock.releaseLock(); }
+    }
     return out_({ok: false, error: 'action'});
   } catch (err) {
     return out_({ok: false, error: String(err && err.message || err)});
@@ -320,6 +325,34 @@ function setsBrief_(c) {
   const codeOf = {};
   (c.students || []).forEach(s => { codeOf[s.id] = String(s.code || '').trim(); });
   return sets.map(gs => ({id: gs.id, name: gs.name, groups: (gs.groups || []).map(g => ({name: g.name, members: (g.members || []).map(id => codeOf[id]).filter(Boolean)}))}));
+}
+
+// คะแนนสอบนอกตาราง → ช่องคะแนน 1 ช่องต่อชุดสอบ (ext = รหัสห้องสอบ) — บันทึกซ้ำจะอัปเดตช่องเดิม
+function setExam_(p) {
+  const all = load_();
+  const c = all.classes.find(x => x.id === p.classId);
+  if (!c) return {ok: false, error: 'class'};
+  c.tasks = c.tasks || []; c.scores = c.scores || {};
+  const ext = String(p.ext || '').slice(0, 60);
+  if (!ext) return {ok: false, error: 'ext'};
+  const max = Math.max(1, Math.min(1000, Number(p.max) || 1));
+  const name = String(p.name || 'สอบนอกตาราง').slice(0, 80);
+  const cat = ['work', 'ex', 'quiz', 'mid', 'final', 'att'].indexOf(p.cat) >= 0 ? p.cat : 'quiz';
+  let t = c.tasks.find(x => x.ext === ext);
+  if (!t) { t = {id: 'ex' + Math.random().toString(36).slice(2, 9), name: name, max: max, cat: cat, ext: ext}; c.tasks.push(t); }
+  else { t.name = name; t.max = max; t.cat = cat; }
+  t.extAt = Date.now();
+  const sc = c.scores[t.id] = c.scores[t.id] || {};
+  const set = [], missing = [];
+  (p.entries || []).slice(0, 200).forEach(e => {
+    const code = String(e.code || '').trim();
+    const st = (c.students || []).find(s => String(s.code || '').trim() === code);
+    if (!code || !st) { missing.push(code); return; }
+    sc[st.id] = Math.max(0, Math.min(max, Number(e.score) || 0));
+    set.push({code: code, name: st.name, score: sc[st.id]});
+  });
+  save_({classes: [c]});
+  return {ok: true, cls: c.name, task: t.name, set: set, missing: missing};
 }
 
 // เพิ่มคะแนนเสริมลงห้องที่เลือก จับคู่ด้วยเลขประจำตัว — กดซ้ำเกมเดิมจะไม่บวกซ้ำ (เช็ก gk)

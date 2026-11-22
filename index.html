@@ -719,10 +719,19 @@ function mergeGameBonus(list){
     c.bonus = c.bonus || [];
     const have = new Set(c.bonus.map(b=>b.id)), gone = new Set(c.bonusDel||[]), sids = new Set((c.students||[]).map(x=>x.id));
     (rc.bonus||[]).forEach(b=>{ if(b && b.gk && !have.has(b.id) && !gone.has(b.id) && sids.has(b.sid)){ c.bonus.push(b); have.add(b.id); n++; } });
+    // ช่องคะแนนที่ระบบสอบนอกตารางเขียนลง Sheet โดยตรง (มี ext) → รับเข้ามา / อัปเดตถ้าใหม่กว่า
+    c.tasks = c.tasks || []; c.scores = c.scores || {};
+    const tdel = new Set(c.taskDel||[]);
+    (rc.tasks||[]).forEach(rt=>{
+      if(!rt || !rt.ext || tdel.has(rt.id)) return;
+      const lt = c.tasks.find(t=>t.id===rt.id);
+      if(!lt){ c.tasks.push({...rt}); c.scores[rt.id] = {...(rc.scores?.[rt.id]||{})}; n++; }
+      else if((rt.extAt||0) > (lt.extAt||0)){ Object.assign(lt, rt); c.scores[rt.id] = {...(rc.scores?.[rt.id]||{})}; n++; }
+    });
   });
   if(n){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
     if(!document.activeElement?.matches('input,textarea')) render();
-    toast(`📥 รับคะแนนพิเศษจากเกม ${n} รายการ`); }
+    toast(`📥 รับคะแนนจากเกม/ระบบสอบ ${n} รายการ`); }
   return n;
 }
 function syncSoon(){ clearTimeout(syncTimer); setStatus('syncing'); syncTimer = setTimeout(syncNow, 1200); }
@@ -1130,8 +1139,8 @@ function taskDialog(task){
   });
   document.getElementById('delTask')?.addEventListener('click', ()=>{
     const idx = c.tasks.findIndex(t=>t.id===task.id); const removed = c.tasks[idx]; const sc = c.scores[task.id];
-    c.tasks.splice(idx,1); delete c.scores[task.id]; closeDialog(); save(); render();
-    toast(`ลบ “${removed.name}” แล้ว`, ()=>{ c.tasks.splice(idx,0,removed); if(sc) c.scores[removed.id]=sc; save(); render(); });
+    c.tasks.splice(idx,1); delete c.scores[task.id]; if(removed.ext) c.taskDel = [...(c.taskDel||[]), removed.id].slice(-200); closeDialog(); save(); render();
+    toast(`ลบ “${removed.name}” แล้ว`, ()=>{ c.tasks.splice(idx,0,removed); if(sc) c.scores[removed.id]=sc; if(c.taskDel) c.taskDel = c.taskDel.filter(x=>x!==removed.id); save(); render(); });
   });
 }
 
