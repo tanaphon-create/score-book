@@ -517,6 +517,10 @@ nav.tabs button:hover{color:var(--tc)}
   header.top .logo{display:none}
 }
 </style>
+<script>/* ล็อกอินครั้งเดียวใช้ทุกระบบ: เคยล็อกอินครูในเครื่องนี้ → ไม่โชว์ปุ่มล็อกอิน ระหว่างรอระบบเข้าให้อัตโนมัติ */
+try{if(localStorage.getItem('gc_teacher')){document.documentElement.classList.add('gc-wait');setTimeout(function(){document.documentElement.classList.remove('gc-wait')},12000)}}catch(e){}</script>
+<style>.gc-wait :is(#loginBtn,#switchBtn,#gateLogin,#gateSwitch,.small-link,.gate-note){display:none!important}
+.gc-wait :is(#loginMsg,#gateMsg){font-size:0!important}.gc-wait :is(#loginMsg,#gateMsg)::before{content:'🔐 กำลังเข้าสู่ระบบอัตโนมัติ…';display:block;font-size:1.05rem;font-weight:600}</style>
 </head>
 <body>
 <div class="gate" id="gate">
@@ -2220,6 +2224,8 @@ if(!S.cur && S.classes[0]) S.cur = S.classes[0].id;
 render(); animateView();
 setStatus('local');
 authReady.then(auth => fbA.onAuthStateChanged(auth, u => {
+  document.documentElement.classList.remove('gc-wait');
+  try{ isTeacher(u) ? localStorage.setItem('gc_teacher','1') : localStorage.removeItem('gc_teacher'); }catch(e){}
   if(isTeacher(u)){
     API = {url: (()=>{ try{ return JSON.parse(localStorage.getItem(API_KEY))?.url; }catch(e){} })() || DEFAULT_API_URL};
     try{ localStorage.setItem(API_KEY, JSON.stringify(API)); }catch(e){}
@@ -2230,7 +2236,7 @@ authReady.then(auth => fbA.onAuthStateChanged(auth, u => {
     API = null;
     lockGate(u && !u.isAnonymous ? `⛔ อีเมล <b>${esc(u.email)}</b> ไม่มีสิทธิ์เข้าสมุดคะแนน` : '', u && !u.isAnonymous);
   }
-})).catch(()=> lockGate('โหลดระบบล็อกอินไม่ได้ — ตรวจอินเทอร์เน็ตแล้วรีเฟรช'));
+})).catch(()=> { document.documentElement.classList.remove('gc-wait'); lockGate('โหลดระบบล็อกอินไม่ได้ — ตรวจอินเทอร์เน็ตแล้วรีเฟรช'); });
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && API) pullFromSheet(); });
 window.addEventListener('pagehide', ()=>{ if(API && pending().any && navigator.sendBeacon){ const p=pending(); navigator.sendBeacon(API.url, JSON.stringify({action:'save', idToken:lastTok, classes:p.changed, deleted:p.deleted, meta:metaObj()})); } });
 window.addEventListener('beforeunload', ()=>{ clearTimeout(saveTimer); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} });
