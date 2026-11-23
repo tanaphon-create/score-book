@@ -796,12 +796,16 @@ async function syncNow(){
   syncing = false;
   if(syncAgain){ syncAgain = false; syncNow(); }
 }
+// ระหว่างเปิดหน้าต่าง (จัดกลุ่ม แก้งาน ฯลฯ) ห้ามสลับข้อมูลทั้งก้อน — หน้าต่างถืออ็อบเจกต์ห้องเดิมอยู่ ถ้าสลับ การแก้ไขจะไปลงสำเนาเก่าแล้วหาย
+let pullLater = false;
 async function pullFromSheet(){
   if(!API || syncing) return;
+  if(dlg.open){ pullLater = true; return; }
   setStatus('loading');
   try{
     const j = await api({action:'load'}); lastPull = Date.now();
     if(pending().any){ mergeGameBonus(j.classes); return syncNow(); }   // มีงานที่ยังไม่ส่ง: รวมคะแนนเกมก่อน แล้วค่อยส่ง
+    if(dlg.open){ pullLater = true; mergeGameBonus(j.classes); setStatus('ok'); return; }
     const list = j.classes || [], order = j.meta?.order || [];
     list.sort((a,b)=>(order.indexOf(a.id)+1||1e9)-(order.indexOf(b.id)+1||1e9));
     if(pending().any) return syncNow();           // user edited while loading; push first
@@ -1850,6 +1854,7 @@ function parseBulk(text, startNo){
 
 /* ================= dialog & toast ================= */
 const dlg = document.getElementById('dlg'), dlgForm = document.getElementById('dlgForm');
+dlg.addEventListener('close', ()=>{ if(pullLater){ pullLater = false; setTimeout(pullFromSheet, 400); } });
 let dlgSubmit = null;
 function openDialog(html, onSubmit, wide){ dlgForm.onchange = dlgForm.onclick = dlgForm.oninput = null; dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.remove('xwide'); dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
 function closeDialog(){ dlg.close(); }
