@@ -490,7 +490,7 @@ dialog.rand-big .rand-members .mchip{font-size:clamp(16px,2vw,26px)}
 dialog.rand-big .dlg-foot .btn{font-size:18px;padding:12px 20px}
 dialog.rand-big.rand-wheel > form{display:grid;grid-template-columns:auto minmax(280px,1fr);grid-template-areas:"h h" "m m" "w r" "f f";align-content:center;gap:10px 30px}
 dialog.rand-big.rand-wheel h2{grid-area:h}dialog.rand-big.rand-wheel .rand-mode{grid-area:m;max-width:420px;justify-self:center;width:100%}
-dialog.rand-big.rand-wheel .wheel-wrap{grid-area:w}dialog.rand-big.rand-wheel .rand{grid-area:r;align-self:center}dialog.rand-big.rand-wheel .dlg-foot{grid-area:f}
+dialog.rand-big.rand-wheel .wheel-wrap{grid-area:w}dialog.rand-big.rand-wheel .rand{grid-area:r;align-self:center}dialog.rand-big.rand-wheel .rand-col{grid-area:r;align-self:center}dialog.rand-big .rg-set{display:none!important}dialog.rand-big.rand-wheel .dlg-foot{grid-area:f}
 dialog.rand-big.rand-wheel .wheel-stage{width:min(72dvh,56vw)}
 dialog.rand-big.rand-wheel .rand-name{font-size:clamp(40px,6vw,110px)}
 @media (max-width:760px){dialog.rand-big.rand-wheel > form{grid-template-columns:1fr;grid-template-areas:"h" "m" "w" "r" "f"}dialog.rand-big.rand-wheel .wheel-stage{width:min(88vw,52dvh)}}
@@ -1453,6 +1453,83 @@ function wheelSound(kind){
 const shortName = n => String(n||'').replace(/^(นางสาว|นาง|นาย|เด็กหญิง|เด็กชาย|ด\.ญ\.|ด\.ช\.|ด\.ส\.|น\.ส\.)\s*/,'').split(/\s+/)[0];
 const WHEEL_COLORS = ['#FF8FB1','#FFC94D','#7FD8BE','#8FB8FF','#C3A6FF','#FFA877','#9BE07A','#FF9CE0','#6FD3F0','#FFD98A'];
 
+// ── วงล้อสุ่ม (ใช้ทั้งสุ่มชื่อและสุ่มกลุ่ม) ──
+// opt: items() รายการที่อยู่ในวง · weight(x) ขนาดช่อง · label(x) ข้อความในช่อง · color(x,i) สีช่อง · tease() โหมดกวน · maxFs ขนาดอักษรสูงสุด
+function makeWheel(cv, say, opt){
+  const W = opt.weight || (()=>1), maxFs = opt.maxFs || 30;
+  let rot = 0, slices = [];
+  const layout = () => { const p = opt.items(); const tot = p.reduce((a,s)=>a+W(s),0) || 1; let a = 0; slices = p.map((s,i)=>{ const w = W(s)/tot*Math.PI*2; const sl = {s, a0:a, a1:a+w, col:(opt.color && opt.color(s,i)) || WHEEL_COLORS[i%WHEEL_COLORS.length]}; a += w; return sl; }); };
+  const at = r => { const th = ((-Math.PI/2 - r) % (Math.PI*2) + Math.PI*4) % (Math.PI*2); return slices.findIndex(x=>th>=x.a0 && th<x.a1); };
+  const draw = (hi=-1) => {
+    const g = cv.getContext('2d'), N = cv.width, R = N/2 - 6;
+    g.clearRect(0,0,N,N); g.save(); g.translate(N/2,N/2); g.rotate(rot);
+    if(!slices.length){ g.restore(); return; }
+    slices.forEach((x,i)=>{
+      g.beginPath(); g.moveTo(0,0); g.arc(0,0,R,x.a0,x.a1); g.closePath();
+      g.fillStyle = x.col; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke();
+      if(i===hi){ g.fillStyle='rgba(255,255,255,.35)'; g.fill(); }
+      const span = x.a1 - x.a0, fs = Math.max(10, Math.min(maxFs, span*R*0.55));
+      if(span*R < 9) return;
+      const lab = opt.label(x.s), mid = (x.a0+x.a1)/2;
+      if(String(lab).length <= 3){   // เลขสั้น ๆ: วางแบบหน้าปัดนาฬิกา หัวตั้งออกด้านนอก อ่านง่าย
+        const f2 = Math.max(14, Math.min(maxFs*1.6, span*R*0.5));
+        g.save(); g.rotate(mid); g.translate(R*0.7, 0); g.rotate(Math.PI/2); g.textAlign='center'; g.textBaseline='middle'; g.fillStyle=opt.ink||'#2B2350'; if(opt.ink){ g.shadowColor='rgba(0,0,0,.45)'; g.shadowBlur=6; }
+        g.font = `800 ${f2}px 'IBM Plex Sans Thai Looped','Noto Sans Thai',system-ui,sans-serif`; g.fillText(lab, 0, 2); g.restore(); return;
+      }
+      g.save(); g.rotate(mid); g.textAlign='right'; g.textBaseline='middle'; g.fillStyle=opt.ink||'#2B2350'; if(opt.ink){ g.shadowColor='rgba(0,0,0,.45)'; g.shadowBlur=6; }
+      g.font = `700 ${fs}px 'IBM Plex Sans Thai Looped','Noto Sans Thai',system-ui,sans-serif`;
+      let t = String(lab); const maxW = R*0.68;
+      while(g.measureText(t).width > maxW && t.length > 2) t = t.slice(0,-1);
+      g.fillText(t, R-14, 1); g.restore();
+    });
+    g.restore();
+    g.beginPath(); g.arc(N/2,N/2,R,0,Math.PI*2); g.lineWidth = 8; g.strokeStyle = '#2B2350'; g.stroke();
+  };
+  const talk = (t, ms=1400) => { say.textContent = t; say.classList.add('on'); clearTimeout(talk.h); talk.h = setTimeout(()=>say.classList.remove('on'), ms); };
+  const animate = (from, to, ms, ease) => new Promise(res => {
+    const t0 = performance.now(); let lastI = at(from);
+    const step = now => {
+      const p = Math.min(1, (now - t0)/ms); rot = from + (to - from)*ease(p);
+      const i = at(rot); if(i !== lastI){ lastI = i; wheelSound('tick'); }
+      draw(); if(p < 1) requestAnimationFrame(step); else res();
+    };
+    if(calm()){ rot = to; draw(); res(); } else requestAnimationFrame(step);
+  });
+  const outCubic = p => 1 - Math.pow(1-p,3), inOut = p => p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+  const wait = ms => new Promise(r=>setTimeout(r, calm()?0:ms));
+  const rotFor = (phi, base, turns) => { const target = -Math.PI/2 - phi; let d = ((target - base) % (Math.PI*2) + Math.PI*4) % (Math.PI*2); return base + turns*Math.PI*2 + d; };
+  const inside = (x, f) => x.a0 + (x.a1 - x.a0) * f;
+  async function spin(){
+    layout(); if(!slices.length) return null;
+    const tot = slices.reduce((a,x)=>a+(x.a1-x.a0),0); let r = Math.random()*tot, wi = 0;
+    for(let i=0;i<slices.length;i++){ r -= (slices[i].a1-slices[i].a0); if(r<=0){ wi=i; break; } }
+    const win = slices[wi], n = slices.length;
+    const roll = Math.random();
+    const plan = !opt.tease() || n < 2 ? 'none' : roll < .4 ? 'back' : roll < .75 ? 'creep' : roll < .88 ? 'double' : 'none';
+    const turns = 5 + Math.floor(Math.random()*3);
+    if(plan === 'back'){            // เลยไปช่องถัดไป แล้วหมุนย้อนกลับ
+      const nb = slices[(wi - 1 + n) % n];
+      await animate(rot, rotFor(inside(nb, .5), rot, turns), 5200, outCubic);
+      talk('ได้แล้ว… เอ๊ะ?!', 1200); wheelSound('huh'); await wait(1100);
+      talk('⏪ หมุนกลับ~', 1300); await animate(rot, rotFor(inside(win, .5), rot, 0) - Math.PI*2, 1500, inOut);
+    } else if(plan === 'creep'){    // หยุดก่อนถึง แล้วค่อย ๆ คืบไป
+      const nb = slices[(wi + 1) % n];
+      await animate(rot, rotFor(inside(nb, .25), rot, turns), 5000, outCubic);
+      talk('จบแล้ว?', 1000); await wait(1200);
+      talk('ยังงง~ คืบไปอีกนิด 🐌', 1500); wheelSound('boing'); await animate(rot, rotFor(inside(win, .5), rot, 0), 2000, inOut);
+    } else if(plan === 'double'){   // ทำเป็นหยุด แล้วหมุนต่ออีกรอบ
+      await animate(rot, rot + Math.PI*2*3 + Math.random(), 3200, outCubic);
+      talk('ล้อเล่น! หมุนต่อ 😜', 1300); wheelSound('boing'); await wait(700);
+      await animate(rot, rotFor(inside(win, .3 + Math.random()*.4), rot, 3), 3800, outCubic);
+    } else {
+      await animate(rot, rotFor(inside(win, .2 + Math.random()*.6), rot, turns), 5200, outCubic);
+    }
+    draw(wi); wheelSound('win');
+    return win.s;
+  }
+  return { layout, draw, spin, size: () => slices.length, hi: it => it ? slices.findIndex(x=>x.s===it) : -1 };
+}
+
 function randomDialog(){
   const c = C(); if(!c) return;
   const day = c.attendance[today()] || {};
@@ -1482,70 +1559,7 @@ function randomDialog(){
     ()=>false);
   const $i = id => document.getElementById(id);
   const go=$i('randGo'), give=$i('randGive'), reset=$i('randReset'), cv=$i('wheelCv'), say=$i('wheelSay');
-  let rot = 0, slices = [];
-  const layout = () => { const p = pool(); const tot = p.reduce((a,s)=>a+W(s),0) || 1; let a = 0; slices = p.map((s,i)=>{ const w = W(s)/tot*Math.PI*2; const sl = {s, a0:a, a1:a+w, col:WHEEL_COLORS[i%WHEEL_COLORS.length]}; a += w; return sl; }); };
-  const at = r => { const th = ((-Math.PI/2 - r) % (Math.PI*2) + Math.PI*4) % (Math.PI*2); return slices.findIndex(x=>th>=x.a0 && th<x.a1); };
-  const draw = (hi=-1) => {
-    const g = cv.getContext('2d'), N = cv.width, R = N/2 - 6;
-    g.clearRect(0,0,N,N); g.save(); g.translate(N/2,N/2); g.rotate(rot);
-    if(!slices.length){ g.restore(); return; }
-    slices.forEach((x,i)=>{
-      g.beginPath(); g.moveTo(0,0); g.arc(0,0,R,x.a0,x.a1); g.closePath();
-      g.fillStyle = x.col; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke();
-      if(i===hi){ g.fillStyle='rgba(255,255,255,.35)'; g.fill(); }
-      const span = x.a1 - x.a0, fs = Math.max(10, Math.min(30, span*R*0.55));
-      if(span*R < 9) return;
-      g.save(); g.rotate((x.a0+x.a1)/2); g.textAlign='right'; g.textBaseline='middle'; g.fillStyle='#2B2350';
-      g.font = `700 ${fs}px 'IBM Plex Sans Thai Looped','Noto Sans Thai',system-ui,sans-serif`;
-      let t = `${x.s.no ? x.s.no + ' ' : ''}${shortName(x.s.name)}`; const maxW = R*0.68;
-      while(g.measureText(t).width > maxW && t.length > 2) t = t.slice(0,-1);
-      g.fillText(t, R-14, 1); g.restore();
-    });
-    g.restore();
-    g.beginPath(); g.arc(N/2,N/2,R,0,Math.PI*2); g.lineWidth = 8; g.strokeStyle = '#2B2350'; g.stroke();
-  };
-  const talk = (t, ms=1400) => { say.textContent = t; say.classList.add('on'); clearTimeout(talk.h); talk.h = setTimeout(()=>say.classList.remove('on'), ms); };
-  const animate = (from, to, ms, ease) => new Promise(res => {
-    const t0 = performance.now(); let lastI = at(from);
-    const step = now => {
-      const p = Math.min(1, (now - t0)/ms); rot = from + (to - from)*ease(p);
-      const i = at(rot); if(i !== lastI){ lastI = i; wheelSound('tick'); }
-      draw(); if(p < 1) requestAnimationFrame(step); else res();
-    };
-    if(calm()){ rot = to; draw(); res(); } else requestAnimationFrame(step);
-  });
-  const outCubic = p => 1 - Math.pow(1-p,3), inOut = p => p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
-  const wait = ms => new Promise(r=>setTimeout(r, calm()?0:ms));
-  const rotFor = (phi, base, turns) => { const target = -Math.PI/2 - phi; let d = ((target - base) % (Math.PI*2) + Math.PI*4) % (Math.PI*2); return base + turns*Math.PI*2 + d; };
-  const inside = (x, f) => x.a0 + (x.a1 - x.a0) * f;
-  async function spinWheel(){
-    layout(); if(!slices.length) return null;
-    const tot = slices.reduce((a,x)=>a+(x.a1-x.a0),0); let r = Math.random()*tot, wi = 0;
-    for(let i=0;i<slices.length;i++){ r -= (slices[i].a1-slices[i].a0); if(r<=0){ wi=i; break; } }
-    const win = slices[wi], n = slices.length;
-    const roll = Math.random();
-    const plan = !tease || n < 2 ? 'none' : roll < .4 ? 'back' : roll < .75 ? 'creep' : roll < .88 ? 'double' : 'none';
-    const turns = 5 + Math.floor(Math.random()*3);
-    if(plan === 'back'){            // เลยไปช่องถัดไป แล้วหมุนย้อนกลับ
-      const nb = slices[(wi - 1 + n) % n];
-      await animate(rot, rotFor(inside(nb, .5), rot, turns), 5200, outCubic);
-      talk('ได้แล้ว… เอ๊ะ?!', 1200); wheelSound('huh'); await wait(1100);
-      talk('⏪ หมุนกลับ~', 1300); await animate(rot, rotFor(inside(win, .5), rot, 0) - Math.PI*2, 1500, inOut);
-    } else if(plan === 'creep'){    // หยุดก่อนถึง แล้วค่อย ๆ คืบไป
-      const nb = slices[(wi + 1) % n];
-      await animate(rot, rotFor(inside(nb, .25), rot, turns), 5000, outCubic);
-      talk('จบแล้ว?', 1000); await wait(1200);
-      talk('ยังงง~ คืบไปอีกนิด 🐌', 1500); wheelSound('boing'); await animate(rot, rotFor(inside(win, .5), rot, 0), 2000, inOut);
-    } else if(plan === 'double'){   // ทำเป็นหยุด แล้วหมุนต่ออีกรอบ
-      await animate(rot, rot + Math.PI*2*3 + Math.random(), 3200, outCubic);
-      talk('ล้อเล่น! หมุนต่อ 😜', 1300); wheelSound('boing'); await wait(700);
-      await animate(rot, rotFor(inside(win, .3 + Math.random()*.4), rot, 3), 3800, outCubic);
-    } else {
-      await animate(rot, rotFor(inside(win, .2 + Math.random()*.6), rot, turns), 5200, outCubic);
-    }
-    draw(wi); wheelSound('win');
-    return win.s;
-  }
+  const wh = makeWheel(cv, say, { items: pool, weight: W, label: x => `${x.no ? x.no + ' ' : ''}${shortName(x.name)}`, tease: () => tease });
   const drawW = () => {
     $i('wheelW').innerHTML = all.map(s=>`<div class="ww-row"><span>${esc(s.no)}. ${esc(s.name)}</span><button type="button" class="btn" data-w="${s.id}" data-d="-1" aria-label="ลดช่อง ${esc(s.name)}">−</button><b>×${W(s)}</b><button type="button" class="btn" data-w="${s.id}" data-d="1" aria-label="ขยายช่อง ${esc(s.name)}">+</button></div>`).join('');
   };
@@ -1556,7 +1570,7 @@ function randomDialog(){
     $i('randDone').innerHTML = noRepeat && list.length ? `<div class="hint">ถูกสุ่มแล้ว ${list.length} คน (แตะชื่อเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(s=>`<button type="button" class="mchip" data-back="${s.id}">${esc(s.no)}. ${esc(s.name)} ↩</button>`).join('')}</div>` : '';
     reset.disabled = !done.size || busy;
     if(noRepeat && !left){ go.disabled = true; go.textContent = 'สุ่มครบทุกคนแล้ว'; } else if(!busy){ go.disabled = false; if(go.textContent==='สุ่มครบทุกคนแล้ว') go.textContent = mode==='wheel' ? '🎡 หมุนเลย' : 'สุ่มเลย'; }
-    if(mode==='wheel' && !busy){ if(!picked || !slices.length) layout(); draw(picked ? slices.findIndex(x=>x.s===picked) : -1); }
+    if(mode==='wheel' && !busy){ if(!picked || !wh.size()) wh.layout(); wh.draw(wh.hi(picked)); }
   };
   const setMode = m => {
     mode = m; lsSet('scorebook.randMode', m);
@@ -1583,63 +1597,109 @@ function randomDialog(){
     $i('randBox').classList.remove('win');
     if(mode === 'wheel'){
       $i('randName').textContent = '🎡 กำลังหมุน…'; $i('randSub').textContent = 'ลุ้น ๆ';
-      const s = await spinWheel(); if(s) finish(s);
+      const s = await wh.spin(); if(s) finish(s);
     } else {
       spinner(items, s=>[s.name, 'เลขที่ ' + s.no], s=> finish(s));
     }
   });
   document.querySelector('.rand-mode').addEventListener('click', e=>{ const b = e.target.closest('[data-mode]'); if(b && !busy) setMode(b.dataset.mode); });
   $i('wheelTease').addEventListener('change', e=>{ tease = e.target.checked; lsSet('scorebook.wheelTease', tease?'1':'0'); });
-  $i('wheelW').addEventListener('click', e=>{ const b = e.target.closest('[data-w]'); if(!b) return; const steps=[.5,1,1.5,2,3,4,5]; const s = all.find(x=>x.id===b.dataset.w); let i = steps.indexOf(W(s)); if(i<0) i=1; i = Math.max(0, Math.min(steps.length-1, i + +b.dataset.d)); if(steps[i]===1) delete weights[s.id]; else weights[s.id]=steps[i]; lsSet(WKEY, JSON.stringify(weights)); drawW(); layout(); draw(); info(); });
-  $i('wheelWReset').addEventListener('click', ()=>{ weights = {}; lsSet(WKEY, '{}'); drawW(); layout(); draw(); info(); });
-  $i('randNoRep').addEventListener('change', e=>{ noRepeat = e.target.checked; lsSet('scorebook.randNoRepeat', noRepeat?'1':'0'); picked=null; layout(); info(); });
-  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; $i('randName').textContent = 'พร้อมไหม?'; $i('randBox').classList.remove('win'); layout(); info(); });
-  $i('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b) return; done.delete(b.dataset.back); randSave(key, done); if(!picked) layout(); info(); });
+  $i('wheelW').addEventListener('click', e=>{ const b = e.target.closest('[data-w]'); if(!b) return; const steps=[.5,1,1.5,2,3,4,5]; const s = all.find(x=>x.id===b.dataset.w); let i = steps.indexOf(W(s)); if(i<0) i=1; i = Math.max(0, Math.min(steps.length-1, i + +b.dataset.d)); if(steps[i]===1) delete weights[s.id]; else weights[s.id]=steps[i]; lsSet(WKEY, JSON.stringify(weights)); drawW(); wh.layout(); wh.draw(); info(); });
+  $i('wheelWReset').addEventListener('click', ()=>{ weights = {}; lsSet(WKEY, '{}'); drawW(); wh.layout(); wh.draw(); info(); });
+  $i('randNoRep').addEventListener('change', e=>{ noRepeat = e.target.checked; lsSet('scorebook.randNoRepeat', noRepeat?'1':'0'); picked=null; wh.layout(); info(); });
+  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; $i('randName').textContent = 'พร้อมไหม?'; $i('randBox').classList.remove('win'); wh.layout(); info(); });
+  $i('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b) return; done.delete(b.dataset.back); randSave(key, done); if(!picked) wh.layout(); info(); });
   give.addEventListener('click', ()=>{ if(picked){ closeDialog(); addBonus(picked.id, 1, 'สุ่มตอบคำถาม'); } });
 }
 
-// สุ่มกลุ่ม: ให้กลุ่มที่ถูกสุ่มตอบคำถาม/แสดงความคิดเห็น
+// สุ่มกลุ่ม: ให้กลุ่มที่ถูกสุ่มตอบคำถาม/แสดงความคิดเห็น (สุ่มชื่อกลุ่ม หรือวงล้อกวน ๆ)
 function randomGroupDialog(){
   const c = C(); if(!c) return;
   const sets = gsets(c).filter(x=>x.groups.some(g=>g.members.length));
   if(!sets.length){ toast('ยังไม่มีกลุ่ม — กด “👥 จัดกลุ่ม” เพื่อแบ่งกลุ่มก่อน'); return; }
+  const ls = (k, d) => { try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch(e){ return d; } };
+  const lsSet = (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} };
   let gs = sets.includes(activeSet(c)) ? activeSet(c) : sets[0];
-  let key = 'grp:' + c.id + ':' + gs.id, done = randMem(key), picked = null;
+  let key = 'grp:' + c.id + ':' + gs.id, done = randMem(key), picked = null, busy = false;
+  let mode = ls('scorebook.grandMode','names');
+  let tease = ls('scorebook.wheelTease','1') !== '0';
+  const WKEY = () => 'scorebook.gwheelW.' + c.id + '.' + gs.id;
+  const loadW = () => { try{ return JSON.parse(ls(WKEY(),'{}')) || {}; }catch(e){ return {}; } };
+  let weights = loadW();
+  const W = g => weights[g.id] || 1;
   const byId = new Map(c.students.map(x=>[x.id,x]));
   const groups = () => gs.groups.filter(g=>g.members.length);
   const pool = () => groups().filter(g=>!done.has(g.id));
   const who = g => g.members.map(m=>byId.get(m)).filter(Boolean).sort((a,b)=>(+a.no||9999)-(+b.no||9999));
+  const gNum = g => { const m = String(g.name||'').match(/\d+/); return m ? m[0] : null; };
   openDialog(`<h2>🎲 สุ่มกลุ่มตอบคำถาม / แสดงความคิดเห็น</h2>
-    ${sets.length>1?`<div class="field"><label for="rg_set">ชุดกลุ่ม</label><select class="ctl" id="rg_set">${sets.map(x=>`<option value="${x.id}" ${x===gs?'selected':''}>${esc(x.name)} (${x.groups.length} กลุ่ม)</option>`).join('')}</select></div>`:''}
-    <div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub"></div></div>
-    <div class="rand-members" id="rgMembers"></div>
+    ${sets.length>1?`<div class="field rg-set"><label for="rg_set">ชุดกลุ่ม</label><select class="ctl" id="rg_set">${sets.map(x=>`<option value="${x.id}" ${x===gs?'selected':''}>${esc(x.name)} (${x.groups.length} กลุ่ม)</option>`).join('')}</select></div>`:''}
+    <div class="seg rand-mode" role="tablist"><button type="button" data-mode="names" role="tab">🎲 สุ่มกลุ่ม</button><button type="button" data-mode="wheel" role="tab">🎡 วงล้อเลขกลุ่ม</button></div>
+    <div class="wheel-wrap" id="wheelWrap" hidden><div class="wheel-stage"><canvas id="wheelCv" width="800" height="800" aria-label="วงล้อสุ่มกลุ่ม"></canvas><div class="wheel-ptr" aria-hidden="true"></div><div class="wheel-hub" aria-hidden="true">👥</div><div class="wheel-say" id="wheelSay" aria-live="polite"></div></div></div>
+    <div class="rand-col"><div class="rand" id="randBox" aria-live="polite"><div class="rand-name" id="randName">พร้อมไหม?</div><div class="rand-sub" id="randSub"></div></div>
+    <div class="rand-members" id="rgMembers"></div></div>
+    <div class="wheel-opts" id="wheelOpts" hidden>
+      <label class="field-chk"><input type="checkbox" id="wheelTease" ${tease?'checked':''}> <span><b>โหมดกวน 😜</b> — วงล้อแกล้งหยุดผิดกลุ่ม แล้วหมุนย้อนกลับ</span></label>
+      <details class="wheel-w"><summary>⚖️ ปรับขนาดช่อง (ช่องใหญ่ = โอกาสถูกสุ่มมากขึ้น)</summary><div id="wheelW"></div><button type="button" class="btn" id="wheelWReset" style="margin-top:8px">↺ ทุกกลุ่มเท่ากัน</button></details>
+    </div>
     <div class="rand-done" id="randDone"></div>
     <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>${randBigBtn()}<button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 ทั้งกลุ่ม</button><button type="button" class="btn pri" id="randGo">สุ่มกลุ่ม</button></div>`,
     ()=>false);
-  wireRandBig();
-  const go=document.getElementById('randGo'), give=document.getElementById('randGive'), reset=document.getElementById('randReset');
+  const $i = id => document.getElementById(id);
+  const go=$i('randGo'), give=$i('randGive'), reset=$i('randReset');
+  const wh = makeWheel($i('wheelCv'), $i('wheelSay'), { items: pool, weight: W, maxFs: 60, tease: () => tease,
+    label: g => gNum(g) && groups().length > 6 ? gNum(g) : g.name, color: g => gColorIn(gs, g), ink: '#fff' });
+  const goLabel = again => mode==='wheel' ? (again ? '🎡 หมุนอีกครั้ง' : '🎡 หมุนเลย') : (again ? 'สุ่มกลุ่มต่อไป' : 'สุ่มกลุ่ม');
+  const drawW = () => {
+    $i('wheelW').innerHTML = groups().map(g=>`<div class="ww-row"><span><i class="gdot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${gColorIn(gs,g)};margin-right:6px"></i>${esc(g.name)} · ${g.members.length} คน</span><button type="button" class="btn" data-w="${g.id}" data-d="-1" aria-label="ลดช่อง ${esc(g.name)}">−</button><b>×${W(g)}</b><button type="button" class="btn" data-w="${g.id}" data-d="1" aria-label="ขยายช่อง ${esc(g.name)}">+</button></div>`).join('');
+  };
   const info = () => {
     const left = pool().length, total = groups().length;
-    if(!picked) document.getElementById('randSub').textContent = `เหลือ ${left} จาก ${total} กลุ่ม · กลุ่มที่ถูกสุ่มแล้วจะไม่ถูกสุ่มซ้ำ`;
-    document.getElementById('rgMembers').innerHTML = picked ? `<div class="rand-chips">${who(picked).map(s=>`<span class="mchip" style="cursor:default">${esc(s.no)}. ${esc(s.name)}</span>`).join('')}</div>` : '';
+    if(!picked && !busy) $i('randSub').textContent = `เหลือ ${left} จาก ${total} กลุ่ม · กลุ่มที่ถูกสุ่มแล้วจะไม่ถูกสุ่มซ้ำ`;
+    $i('rgMembers').innerHTML = picked ? `<div class="rand-chips">${who(picked).map(s=>`<span class="mchip" style="cursor:default">${esc(s.no)}. ${esc(s.name)}</span>`).join('')}</div>` : '';
     const list = groups().filter(g=>done.has(g.id));
-    document.getElementById('randDone').innerHTML = list.length ? `<div class="hint">ถูกสุ่มแล้ว (แตะเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(g=>`<button type="button" class="mchip" data-back="${g.id}" style="border-color:${gColorIn(gs,g)}">${esc(g.name)} ↩</button>`).join('')}</div>` : '';
-    reset.disabled = !done.size;
-    if(!left){ go.disabled = true; go.textContent = 'ครบทุกกลุ่มแล้ว'; } else { go.disabled = false; if(go.textContent==='ครบทุกกลุ่มแล้ว') go.textContent = 'สุ่มกลุ่ม'; }
+    $i('randDone').innerHTML = list.length ? `<div class="hint">ถูกสุ่มแล้ว (แตะเพื่อคืนเข้าวง)</div><div class="rand-chips">${list.map(g=>`<button type="button" class="mchip" data-back="${g.id}" style="border-color:${gColorIn(gs,g)}">${esc(g.name)} ↩</button>`).join('')}</div>` : '';
+    reset.disabled = !done.size || busy;
+    if(!left && !busy){ go.disabled = true; go.textContent = 'ครบทุกกลุ่มแล้ว'; } else if(!busy){ go.disabled = false; if(go.textContent==='ครบทุกกลุ่มแล้ว') go.textContent = goLabel(false); }
+    if(mode==='wheel' && !busy){ if(!picked || !wh.size()) wh.layout(); wh.draw(wh.hi(picked)); }
   };
-  info();
-  go.addEventListener('click', ()=>{
-    const items = pool(); if(!items.length) return;
-    go.disabled = give.disabled = true; picked = null; document.getElementById('rgMembers').innerHTML = '';
-    spinner(items, g=>[g.name, `${g.members.length} คน`], g=>{
-      picked = g; done.add(g.id); randSave(key, done);
-      document.getElementById('randSub').textContent = `${g.members.length} คน · ตอบคำถาม / แสดงความคิดเห็น`;
-      give.disabled = false; go.textContent = 'สุ่มกลุ่มต่อไป'; info();
-    });
+  const setMode = m => {
+    mode = m; lsSet('scorebook.grandMode', m);
+    document.querySelectorAll('.rand-mode [data-mode]').forEach(b=>b.classList.toggle('on', b.dataset.mode===m));
+    $i('wheelWrap').hidden = $i('wheelOpts').hidden = m !== 'wheel';
+    dlg.classList.toggle('rand-wheel', m==='wheel');
+    if(!go.disabled) go.textContent = goLabel(!!picked);
+    if(m==='wheel') drawW();
+    info();
+  };
+  setMode(mode);
+  wireRandBig(()=>info());
+  dlg.addEventListener('close', ()=> dlg.classList.remove('rand-wheel'), {once:true});
+  const lock = on => { document.querySelectorAll('.rand-mode button').forEach(b=>b.disabled=on); const sel = $i('rg_set'); if(sel) sel.disabled = on; };
+  const finish = g => {
+    busy = false; picked = g; done.add(g.id); randSave(key, done);
+    const box = $i('randBox'); $i('randName').textContent = g.name; box.classList.add('win'); if(mode==='wheel') confetti(box);
+    $i('randSub').textContent = `${g.members.length} คน · ตอบคำถาม / แสดงความคิดเห็น`;
+    give.disabled = false; go.disabled = false; go.textContent = goLabel(true); lock(false); info();
+  };
+  go.addEventListener('click', async ()=>{
+    const items = pool(); if(!items.length || busy) return;
+    busy = true; go.disabled = give.disabled = reset.disabled = true; picked = null; lock(true);
+    $i('rgMembers').innerHTML = ''; $i('randBox').classList.remove('win');
+    if(mode === 'wheel'){
+      $i('randName').textContent = '🎡 กำลังหมุน…'; $i('randSub').textContent = 'ลุ้น ๆ กลุ่มไหนจะโดน';
+      const g = await wh.spin(); if(g) finish(g); else { busy = false; lock(false); info(); }
+    } else {
+      spinner(items, g=>[g.name, `${g.members.length} คน`], g=> finish(g));
+    }
   });
-  document.getElementById('rg_set')?.addEventListener('change', e=>{ gs = setById(c, e.target.value) || gs; key = 'grp:' + c.id + ':' + gs.id; done = randMem(key); picked = null; document.getElementById('randName').textContent = 'พร้อมไหม?'; give.disabled = true; info(); });
-  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; document.getElementById('randName').textContent = 'พร้อมไหม?'; give.disabled = true; info(); });
-  document.getElementById('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b) return; done.delete(b.dataset.back); randSave(key, done); info(); });
+  document.querySelector('.rand-mode').addEventListener('click', e=>{ const b = e.target.closest('[data-mode]'); if(b && !busy) setMode(b.dataset.mode); });
+  $i('wheelTease').addEventListener('change', e=>{ tease = e.target.checked; lsSet('scorebook.wheelTease', tease?'1':'0'); });
+  $i('wheelW').addEventListener('click', e=>{ const b = e.target.closest('[data-w]'); if(!b) return; const steps=[.5,1,1.5,2,3,4,5]; const g = groups().find(x=>x.id===b.dataset.w); if(!g) return; let i = steps.indexOf(W(g)); if(i<0) i=1; i = Math.max(0, Math.min(steps.length-1, i + +b.dataset.d)); if(steps[i]===1) delete weights[g.id]; else weights[g.id]=steps[i]; lsSet(WKEY(), JSON.stringify(weights)); drawW(); wh.layout(); wh.draw(wh.hi(picked)); info(); });
+  $i('wheelWReset').addEventListener('click', ()=>{ weights = {}; lsSet(WKEY(), '{}'); drawW(); wh.layout(); wh.draw(); info(); });
+  $i('rg_set')?.addEventListener('change', e=>{ if(busy) return; gs = setById(c, e.target.value) || gs; key = 'grp:' + c.id + ':' + gs.id; done = randMem(key); weights = loadW(); picked = null; $i('randName').textContent = 'พร้อมไหม?'; $i('randBox').classList.remove('win'); give.disabled = true; go.textContent = goLabel(false); if(mode==='wheel') drawW(); wh.layout(); info(); });
+  reset.addEventListener('click', ()=>{ done = new Set(); randSave(key, done); picked = null; $i('randName').textContent = 'พร้อมไหม?'; $i('randBox').classList.remove('win'); give.disabled = true; go.textContent = goLabel(false); wh.layout(); info(); });
+  $i('randDone').addEventListener('click', e=>{ const b = e.target.closest('[data-back]'); if(!b || busy) return; done.delete(b.dataset.back); randSave(key, done); if(!picked) wh.layout(); info(); });
   give.addEventListener('click', ()=>{
     if(!picked) return;
     const ids = new Set(), ts = Date.now();
