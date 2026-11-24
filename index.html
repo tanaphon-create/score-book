@@ -494,6 +494,31 @@ dialog.rand-big.rand-wheel .wheel-wrap{grid-area:w}dialog.rand-big.rand-wheel .r
 dialog.rand-big.rand-wheel .wheel-stage{width:min(72dvh,56vw)}
 dialog.rand-big.rand-wheel .rand-name{font-size:clamp(40px,6vw,110px)}
 @media (max-width:760px){dialog.rand-big.rand-wheel > form{grid-template-columns:1fr;grid-template-areas:"h" "m" "w" "r" "f"}dialog.rand-big.rand-wheel .wheel-stage{width:min(88vw,52dvh)}}
+/* ให้คะแนนนำเสนอกลุ่ม */
+.pres-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.pres-top .ctl{max-width:320px}.pres-top .grow{flex:1}
+.pres-edit{border:1px dashed var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:var(--surface-2)}
+.pres-crow{display:grid;grid-template-columns:24px 1fr 76px auto;gap:8px;align-items:center;margin-top:6px}
+.pres-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.pres-g{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:14px;border:2px solid var(--line);border-left:6px solid var(--gc,var(--brand));background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+.pres-g small{color:var(--muted);font-size:12px}.pres-g.done small{color:var(--green,#16a34a);font-weight:700}
+.pres-g.on{border-color:var(--gc);box-shadow:0 0 0 3px color-mix(in srgb,var(--gc) 25%,transparent)}
+.pres-g.wheel{border-style:dashed;border-left-width:2px;text-align:center;place-content:center}
+.pres-card{border:1px solid var(--line);border-top:6px solid var(--gc);border-radius:16px;padding:14px;background:var(--surface)}
+.pres-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:8px}.pres-head h3{margin:0 0 4px}
+.pres-total{display:flex;align-items:baseline;gap:4px;white-space:nowrap}.pres-total b{font-size:40px;line-height:1;color:var(--gc)}.pres-total span{color:var(--muted);font-weight:700}
+.pres-row{display:grid;grid-template-columns:minmax(160px,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.pres-cn{font-weight:600}
+.pres-lvs{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.pres-lv{min-width:62px;display:grid;justify-items:center;gap:0;padding:6px 8px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--text);font:inherit;cursor:pointer;line-height:1.2}
+.pres-lv b{font-size:18px}.pres-lv small{font-size:11px;color:var(--muted)}
+.pres-lv:hover{border-color:var(--gc)}.pres-lv.on{background:var(--gc);border-color:var(--gc);color:#fff}.pres-lv.on small{color:#fff}
+.pres-foot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.pres-foot .grow{flex:1}.pres-foot .ok{color:var(--green,#16a34a);font-weight:700}
+.pres-empty{text-align:center;padding:24px 0}
+.pres-preview{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;background:var(--surface-2)}.pres-preview ol{margin:6px 0;padding-left:22px}
+@media (max-width:620px){.pres-row{grid-template-columns:1fr}.pres-lvs{justify-content:flex-start}.pres-crow{grid-template-columns:20px 1fr 64px auto}}
+dialog.rand-big .pres-card{font-size:clamp(16px,1.6vw,22px)}dialog.rand-big .pres-total b{font-size:clamp(44px,6vw,80px)}dialog.rand-big .pres-lv{min-width:clamp(62px,7vw,96px)}dialog.rand-big .pres-lv b{font-size:clamp(18px,2vw,28px)}
+dialog.rand-big > form:has(.pres-card){justify-content:flex-start}
+dialog.rand-big .pres-head h3{font-size:clamp(26px,3.2vw,44px)}dialog.rand-big .pres-head .mchip{font-size:clamp(15px,1.5vw,22px)}
 /* ---------- หน้าเข้าสู่ระบบครู ---------- */
 .gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:var(--bg,#0f0b24);background-image:radial-gradient(900px 600px at 15% 10%,rgba(124,92,255,.35),transparent 60%),radial-gradient(800px 600px at 90% 90%,rgba(56,189,248,.25),transparent 60%)}
 .quiz-btn{text-decoration:none;gap:6px;white-space:nowrap;background:linear-gradient(90deg,#FF6F91,#FF9F43);color:#fff;border-color:transparent;font-weight:600}
@@ -600,6 +625,7 @@ try{if(localStorage.getItem('gc_teacher')){document.documentElement.classList.ad
       <button data-act="random"><b>🎲</b><span>สุ่มชื่อนักเรียน</span></button>
       <button data-act="randGroup"><b>🎯</b><span>สุ่มกลุ่มตอบคำถาม</span></button>
       <button data-act="groups"><b>👥</b><span>จัดกลุ่มนักเรียน</span></button>
+      <button data-act="pres"><b>🎤</b><span>ให้คะแนนนำเสนอกลุ่ม<small>มีเกณฑ์ให้คะแนน · วงล้อสุ่มกลุ่ม</small></span></button>
     </div></section>
     <section><h3>🏫 ห้องเรียน</h3><div class="sgrid">
       <button data-act="newClass"><b>＋</b><span>เพิ่มห้องเรียน</span></button>
@@ -1085,7 +1111,7 @@ function groupsDialog(){
           <select class="ctl" id="g_mode"><option value="k">แบ่งเป็น (จำนวนกลุ่ม)</option><option value="m">กลุ่มละ (จำนวนคน)</option></select>
           <label class="sr" for="g_n">จำนวน</label><input class="ctl" id="g_n" type="number" min="1" max="${sts.length}" value="${Math.max(2,Math.round(sts.length/4))}">
           <button type="button" class="btn pri" id="g_rand">🎲 สุ่มแบ่งกลุ่ม</button></div>
-        <div class="grp-acts"><button type="button" class="btn sm" id="g_add">＋ เพิ่มกลุ่ม</button>
+        <div class="grp-acts"><button type="button" class="btn sm" id="g_wheel" ${G.groups.some(g=>g.members.length)?'':'disabled'}>🎡 สุ่มกลุ่มนำเสนอ</button><button type="button" class="btn sm" id="g_pres" ${G.groups.some(g=>g.members.length)?'':'disabled'}>🎤 ให้คะแนนนำเสนอ</button><button type="button" class="btn sm" id="g_add">＋ เพิ่มกลุ่ม</button>
           <button type="button" class="btn sm danger" id="g_clear" ${G.groups.length?'':'disabled'}>ล้างกลุ่มทั้งหมด</button></div></div>
       <div class="grp-cards">${G.groups.map(g=>`<div class="grp-card" style="--gc:${gColorIn(gs,g)}">
         <div class="grp-h"><input class="ctl" data-gname="${g.id}" value="${esc(g.name)}" maxlength="30" aria-label="ชื่อกลุ่ม"><span class="chip">${g.members.length} คน</span>
@@ -1121,6 +1147,8 @@ function groupsDialog(){
     }
     const rm = e.target.closest('[data-rm]'); if(rm){ G.groups.forEach(g=>{ g.members = g.members.filter(x=>x!==rm.dataset.rm); }); changed(); return; }
     const dg = e.target.closest('[data-delg]'); if(dg){ const before=snap(); G.groups = G.groups.filter(g=>g.id!==dg.dataset.delg); changed(); toast('ลบกลุ่มแล้ว', undoTo(before)); return; }
+    if(e.target.id==='g_wheel'){ randomGroupDialog({setId: gs.id, mode:'wheel'}); return; }
+    if(e.target.id==='g_pres'){ presDialog({setId: gs.id}); return; }
     if(e.target.id==='g_add'){ const used = new Set(G.groups.map(g=>g.name)); let i=G.groups.length+1; while(used.has('กลุ่ม '+i)) i++; G.groups.push({id:uid(), name:'กลุ่ม '+i, members:[]}); changed(); return; }
     if(e.target.id==='g_clear'){ const before=snap(); G.groups = []; changed(); toast('ล้างกลุ่มทั้งหมดแล้ว', undoTo(before)); return; }
     if(e.target.id==='g_rand'){
@@ -1428,12 +1456,12 @@ function spinner(items, label, onWin){
   tick();
 }
 // ── ขยายเต็มจอ (ใช้ทั้งสุ่มชื่อ สุ่มกลุ่ม วงล้อ) ──
-function randBigBtn(){ return `<button type="button" class="btn" id="randBig" title="ขยายให้ทั้งห้องเห็นบนจอ">🖥️ ขยาย</button>`; }
+function randBigBtn(){ return `<button type="button" class="btn" id="randBig" title="ขยายให้ทั้งห้องเห็นบนจอ">${dlg.classList.contains('rand-big') ? '↩️ ย่อ' : '🖥️ ขยาย'}</button>`; }
 function wireRandBig(onResize){
   const b = document.getElementById('randBig'); if(!b) return;
   const set = on => { dlg.classList.toggle('rand-big', on); b.textContent = on ? '↩️ ย่อ' : '🖥️ ขยาย'; onResize && onResize(); };
+  if(wireRandBig.keep){ wireRandBig.keep = false; set(true); } else b.textContent = dlg.classList.contains('rand-big') ? '↩️ ย่อ' : '🖥️ ขยาย';
   b.addEventListener('click', ()=> set(!dlg.classList.contains('rand-big')));
-  dlg.addEventListener('close', ()=> dlg.classList.remove('rand-big'), {once:true});
 }
 // ── เสียงติ๊กวงล้อ (สังเคราะห์ ไม่ต้องโหลดไฟล์) ──
 let wheelAC = null;
@@ -1583,7 +1611,6 @@ function randomDialog(){
   };
   setMode(mode);
   wireRandBig(()=>info());
-  dlg.addEventListener('close', ()=> dlg.classList.remove('rand-wheel'), {once:true});
   const finish = s => {
     busy = false; picked = s; if(noRepeat){ done.add(s.id); randSave(key, done); }
     const box = $i('randBox'); $i('randName').textContent = s.name; box.classList.add('win'); confetti(box);
@@ -1613,15 +1640,15 @@ function randomDialog(){
 }
 
 // สุ่มกลุ่ม: ให้กลุ่มที่ถูกสุ่มตอบคำถาม/แสดงความคิดเห็น (สุ่มชื่อกลุ่ม หรือวงล้อกวน ๆ)
-function randomGroupDialog(){
+function randomGroupDialog(opt={}){
   const c = C(); if(!c) return;
   const sets = gsets(c).filter(x=>x.groups.some(g=>g.members.length));
   if(!sets.length){ toast('ยังไม่มีกลุ่ม — กด “👥 จัดกลุ่ม” เพื่อแบ่งกลุ่มก่อน'); return; }
   const ls = (k, d) => { try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch(e){ return d; } };
   const lsSet = (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} };
-  let gs = sets.includes(activeSet(c)) ? activeSet(c) : sets[0];
+  let gs = sets.find(x=>x.id===opt.setId) || (sets.includes(activeSet(c)) ? activeSet(c) : sets[0]);
   let key = 'grp:' + c.id + ':' + gs.id, done = randMem(key), picked = null, busy = false;
-  let mode = ls('scorebook.grandMode','names');
+  let mode = opt.mode || ls('scorebook.grandMode','names');
   let tease = ls('scorebook.wheelTease','1') !== '0';
   const WKEY = () => 'scorebook.gwheelW.' + c.id + '.' + gs.id;
   const loadW = () => { try{ return JSON.parse(ls(WKEY(),'{}')) || {}; }catch(e){ return {}; } };
@@ -1643,9 +1670,10 @@ function randomGroupDialog(){
       <details class="wheel-w"><summary>⚖️ ปรับขนาดช่อง (ช่องใหญ่ = โอกาสถูกสุ่มมากขึ้น)</summary><div id="wheelW"></div><button type="button" class="btn" id="wheelWReset" style="margin-top:8px">↺ ทุกกลุ่มเท่ากัน</button></details>
     </div>
     <div class="rand-done" id="randDone"></div>
-    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>${randBigBtn()}<button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 ทั้งกลุ่ม</button><button type="button" class="btn pri" id="randGo">สุ่มกลุ่ม</button></div>`,
+    <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>${randBigBtn()}<button type="button" class="btn" id="randReset">↺ เริ่มใหม่</button><button type="button" class="btn" id="randPres" disabled>🎤 ให้คะแนนนำเสนอ</button><button type="button" class="btn" id="randGive" disabled>⭐ +1 ทั้งกลุ่ม</button><button type="button" class="btn pri" id="randGo">สุ่มกลุ่ม</button></div>`,
     ()=>false);
   const $i = id => document.getElementById(id);
+  $i('randPres').addEventListener('click', ()=>{ if(picked && !busy){ wireRandBig.keep = dlg.classList.contains('rand-big'); presDialog({setId: gs.id, gid: picked.id}); } });
   const go=$i('randGo'), give=$i('randGive'), reset=$i('randReset');
   const wh = makeWheel($i('wheelCv'), $i('wheelSay'), { items: pool, weight: W, maxFs: 60, tease: () => tease,
     label: g => gNum(g) && groups().length > 6 ? gNum(g) : g.name, color: g => gColorIn(gs, g), ink: '#fff' });
@@ -1674,17 +1702,16 @@ function randomGroupDialog(){
   };
   setMode(mode);
   wireRandBig(()=>info());
-  dlg.addEventListener('close', ()=> dlg.classList.remove('rand-wheel'), {once:true});
   const lock = on => { document.querySelectorAll('.rand-mode button').forEach(b=>b.disabled=on); const sel = $i('rg_set'); if(sel) sel.disabled = on; };
   const finish = g => {
     busy = false; picked = g; done.add(g.id); randSave(key, done);
     const box = $i('randBox'); $i('randName').textContent = g.name; box.classList.add('win'); if(mode==='wheel') confetti(box);
     $i('randSub').textContent = `${g.members.length} คน · ตอบคำถาม / แสดงความคิดเห็น`;
-    give.disabled = false; go.disabled = false; go.textContent = goLabel(true); lock(false); info();
+    give.disabled = false; $i('randPres').disabled = false; go.disabled = false; go.textContent = goLabel(true); lock(false); info();
   };
   go.addEventListener('click', async ()=>{
     const items = pool(); if(!items.length || busy) return;
-    busy = true; go.disabled = give.disabled = reset.disabled = true; picked = null; lock(true);
+    busy = true; go.disabled = give.disabled = reset.disabled = $i('randPres').disabled = true; picked = null; lock(true);
     $i('rgMembers').innerHTML = ''; $i('randBox').classList.remove('win');
     if(mode === 'wheel'){
       $i('randName').textContent = '🎡 กำลังหมุน…'; $i('randSub').textContent = 'ลุ้น ๆ กลุ่มไหนจะโดน';
@@ -1707,6 +1734,117 @@ function randomGroupDialog(){
     closeDialog(); save(); render();
     toast(`+1 คะแนน ให้ ${picked.name} (${picked.members.length} คน)`, ()=>{ c.bonus = c.bonus.filter(b=>!ids.has(b.id)); save(); render(); });
   });
+}
+/* ---------- ให้คะแนนนำเสนองานกลุ่ม (มีเกณฑ์/รูบริก) ----------
+   เก็บในงานกลุ่ม: task.rubric = {crit:[{n,max}], marks:{gid:[คะแนนรายเกณฑ์]}} · คะแนนรวมลงช่องงานของสมาชิกทุกคนในกลุ่ม */
+const PRES_CRIT = [
+  {n:'เนื้อหาถูกต้อง ครบถ้วน', max:4},
+  {n:'ลำดับเรื่องชัดเจน เข้าใจง่าย', max:4},
+  {n:'บุคลิกภาพ น้ำเสียง การใช้ภาษา', max:4},
+  {n:'สื่อ/สิ่งประกอบการนำเสนอ', max:4},
+  {n:'ตรงต่อเวลา และตอบคำถามได้', max:4},
+];
+const PRES_LV = {4:['ดีมาก','ดี','พอใช้','ปรับปรุง'], 3:['ดี','พอใช้','ปรับปรุง'], 5:['ดีเยี่ยม','ดีมาก','ดี','พอใช้','ปรับปรุง']};
+function presDialog(opt={}){
+  const c = C(); if(!c) return;
+  const sets = gsets(c).filter(x=>x.groups.some(g=>g.members.length));
+  if(!sets.length){ toast('ยังไม่มีกลุ่ม — กด “👥 จัดกลุ่ม” เพื่อแบ่งกลุ่มก่อน'); return; }
+  let gs = sets.find(x=>x.id===opt.setId) || (sets.includes(activeSet(c)) ? activeSet(c) : sets[0]);
+  const LK = 'scorebook.presTask.' + c.id;
+  const lsGet = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+  const lsPut = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
+  const tasksOf = () => c.tasks.filter(t=>t.group && t.rubric && setOf(c,t)===gs);
+  let task = c.tasks.find(t=>t.id===opt.taskId) || tasksOf().find(t=>t.id===lsGet(LK)) || tasksOf().slice(-1)[0] || null;
+  const groups = () => gs.groups.filter(g=>g.members.length);
+  let gid = opt.gid || null, editing = false;
+  const byId = new Map(c.students.map(x=>[x.id,x]));
+  const total = t => t.rubric.crit.reduce((a,x)=>a+(+x.max||0),0);
+  const marks = g => (task.rubric.marks ||= {})[g.id] || [];
+  const sumOf = g => marks(g).reduce((a,v)=>a+(+v||0),0);
+  const complete = g => task.rubric.crit.every((_,i)=>marks(g)[i]!=null);
+  const status = g => { const m = marks(g); if(!m.some(v=>v!=null)) return ''; return complete(g) ? `✓ ${fmt(sumOf(g))}/${fmt(total(task))}` : `… ${m.filter(v=>v!=null).length}/${task.rubric.crit.length} เกณฑ์`; };
+  // เขียนคะแนนรวมลงงาน (ทุกคนในกลุ่มเท่ากัน) — ยังให้ไม่ครบทุกเกณฑ์ = ยังไม่ลงคะแนน
+  const writeScores = g => { g.members.forEach(sid=> setScore(c, task.id, sid, complete(g) ? sumOf(g) : null)); };
+  const syncMax = () => { task.max = total(task) || 1; groups().forEach(g=>{ const m = marks(g); task.rubric.crit.forEach((x,i)=>{ if(m[i]!=null && m[i]>x.max) m[i]=x.max; }); m.length = Math.min(m.length, task.rubric.crit.length); writeScores(g); }); };
+  const newTask = name => {
+    const t = {id:uid(), name: name || 'นำเสนองานกลุ่ม', max: 0, cat:'work', group:true, gset: gs.id, rubric:{crit: JSON.parse(JSON.stringify(PRES_CRIT)), marks:{}}};
+    t.max = total(t); c.tasks.push(t); task = t; lsPut(LK, t.id); save(); render();
+  };
+  const levelBtns = (x, i, cur) => { const lv = PRES_LV[x.max]; const out = [];
+    for(let v=x.max; v>=1; v--) out.push(`<button type="button" class="pres-lv${cur===v?' on':''}" data-crit="${i}" data-v="${v}" aria-pressed="${cur===v}"><b>${v}</b>${lv?`<small>${lv[x.max-v]}</small>`:''}</button>`);
+    return out.join(''); };
+  const paint = () => {
+    const top = dlg.scrollTop;
+    const setSel = sets.length>1 ? `<label class="sr" for="pr_set">ชุดกลุ่ม</label><select class="ctl" id="pr_set">${sets.map(x=>`<option value="${x.id}" ${x===gs?'selected':''}>${esc(x.name)}</option>`).join('')}</select>` : '';
+    if(!task){
+      dlgForm.innerHTML = `<h2>🎤 ให้คะแนนนำเสนองานกลุ่ม</h2>
+        <p class="hint" style="margin-top:0">สร้างงานนำเสนอ 1 ชิ้นในสมุดคะแนน (คะแนนกลุ่ม · ${esc(gs.name)}) แล้วให้คะแนนตามเกณฑ์ทีละกลุ่ม คะแนนรวมจะลงช่องของทุกคนในกลุ่มอัตโนมัติ</p>
+        ${setSel?`<div class="field">${setSel}</div>`:''}
+        <div class="field"><label for="pr_name">ชื่องาน</label><input class="ctl" id="pr_name" maxlength="60" value="นำเสนองานกลุ่ม"></div>
+        <div class="pres-preview"><b>เกณฑ์เริ่มต้น (แก้ได้ภายหลัง) · เต็ม ${PRES_CRIT.reduce((a,x)=>a+x.max,0)} คะแนน</b><ol>${PRES_CRIT.map(x=>`<li>${esc(x.n)} <span class="hint">(${x.max} คะแนน)</span></li>`).join('')}</ol><span class="hint">ระดับคะแนน: 4 ดีมาก · 3 ดี · 2 พอใช้ · 1 ปรับปรุง</span></div>
+        <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button><button type="button" class="btn pri" id="pr_create">＋ สร้างงานนำเสนอ</button></div>`;
+      return;
+    }
+    const gl = groups(); if(gid && !gl.some(g=>g.id===gid)) gid = null;
+    const g = gl.find(x=>x.id===gid);
+    const others = tasksOf();
+    dlgForm.innerHTML = `<h2>🎤 ให้คะแนนนำเสนองานกลุ่ม</h2>
+      <div class="pres-top">${setSel}
+        <label class="sr" for="pr_task">งาน</label><select class="ctl" id="pr_task">${others.map(t=>`<option value="${t.id}" ${t===task?'selected':''}>${esc(t.name)} (เต็ม ${fmt(t.max)})</option>`).join('')}<option value="__new">＋ งานนำเสนอใหม่…</option></select>
+        <span class="grow"></span><button type="button" class="btn sm" id="pr_edit" aria-expanded="${editing}">⚙️ แก้ไขเกณฑ์</button></div>
+      ${editing ? `<div class="pres-edit"><div class="hint">ชื่องาน</div><input class="ctl" id="pr_tname" maxlength="60" value="${esc(task.name)}">
+        <div class="hint" style="margin-top:8px">เกณฑ์การให้คะแนน · คะแนนเต็มรวม <b>${fmt(total(task))}</b></div>
+        ${task.rubric.crit.map((x,i)=>`<div class="pres-crow"><span>${i+1}.</span><input class="ctl" data-cname="${i}" maxlength="60" value="${esc(x.n)}" aria-label="ชื่อเกณฑ์ที่ ${i+1}">
+          <select class="ctl" data-cmax="${i}" aria-label="คะแนนเต็มเกณฑ์ที่ ${i+1}">${[1,2,3,4,5,6,8,10].map(v=>`<option ${v===x.max?'selected':''}>${v}</option>`).join('')}</select>
+          <button type="button" class="btn sm ghost danger" data-cdel="${i}" ${task.rubric.crit.length>1?'':'disabled'} aria-label="ลบเกณฑ์ที่ ${i+1}">✕</button></div>`).join('')}
+        <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn sm" id="pr_cadd">＋ เพิ่มเกณฑ์</button><button type="button" class="btn sm" id="pr_creset">↺ ใช้เกณฑ์เริ่มต้น</button><span class="grow"></span><button type="button" class="btn sm pri" id="pr_edone">เสร็จ</button></div></div>` : ''}
+      <div class="pres-groups">${gl.map(x=>`<button type="button" class="pres-g${x.id===gid?' on':''}${complete(x)?' done':''}" style="--gc:${gColorIn(gs,x)}" data-pg="${x.id}"><b>${esc(x.name)}</b><small>${status(x) || 'ยังไม่ให้คะแนน'}</small></button>`).join('')}
+        <button type="button" class="pres-g wheel" id="pr_wheel">🎡 <b>สุ่มกลุ่ม</b><small>วงล้อกวน ๆ</small></button></div>
+      ${g ? `<div class="pres-card" style="--gc:${gColorIn(gs,g)}">
+        <div class="pres-head"><div><h3>${esc(g.name)}</h3><div class="rand-chips">${g.members.map(m=>byId.get(m)).filter(Boolean).sort((a,b)=>(+a.no||9999)-(+b.no||9999)).map(s=>`<span class="mchip" style="cursor:default;--gc:${gColorIn(gs,g)}">${esc(s.no)}. ${esc(s.name)}</span>`).join('')}</div></div>
+          <div class="pres-total"><b>${fmt(sumOf(g))}</b><span>/ ${fmt(total(task))}</span></div></div>
+        ${task.rubric.crit.map((x,i)=>`<div class="pres-row"><div class="pres-cn">${i+1}. ${esc(x.n)}</div><div class="pres-lvs" role="group" aria-label="${esc(x.n)}">${levelBtns(x,i,marks(g)[i])}</div></div>`).join('')}
+        <div class="pres-foot">${complete(g) ? `<span class="ok">✓ ลงคะแนน ${fmt(sumOf(g))} ให้ ${g.members.length} คนแล้ว</span>` : `<span class="hint">ให้ครบทุกเกณฑ์แล้วคะแนนจะลงสมุดอัตโนมัติ</span>`}
+          <span class="grow"></span>${marks(g).some(v=>v!=null)?'<button type="button" class="btn sm ghost danger" id="pr_clear">ล้างคะแนนกลุ่มนี้</button>':''}
+          ${gl.find(x=>x!==g && !complete(x)) ? '<button type="button" class="btn sm pri" id="pr_next">กลุ่มถัดไปที่ยังไม่ได้คะแนน ›</button>' : ''}</div></div>`
+      : `<p class="hint pres-empty">เลือกกลุ่มด้านบน หรือกด 🎡 สุ่มกลุ่มที่จะออกมานำเสนอ</p>`}
+      <div class="dlg-foot"><button type="button" class="btn left" data-close>ปิด</button>${randBigBtn()}</div>`;
+    wireRandBig();
+    dlg.scrollTop = top;
+  };
+  openDialog('', ()=>false, true); dlg.classList.add('xwide'); paint();
+  const changed = () => { save(); render(); paint(); };
+  dlgForm.onchange = e => {
+    const t = e.target;
+    if(t.id==='pr_set'){ gs = setById(c, t.value) || gs; task = tasksOf().find(x=>x.id===lsGet(LK)) || tasksOf().slice(-1)[0] || null; gid = null; paint(); return; }
+    if(t.id==='pr_task'){ if(t.value==='__new'){ const n = prompt('ชื่องานนำเสนอใหม่', 'นำเสนองานกลุ่ม ' + (tasksOf().length+1)); if(n && n.trim()) newTask(n.trim()); paint(); return; } task = c.tasks.find(x=>x.id===t.value) || task; lsPut(LK, task.id); gid = null; paint(); return; }
+    if(t.id==='pr_tname'){ task.name = t.value.trim() || task.name; changed(); return; }
+    if(t.dataset.cname!=null){ task.rubric.crit[+t.dataset.cname].n = t.value.trim() || 'เกณฑ์'; changed(); return; }
+    if(t.dataset.cmax!=null){ task.rubric.crit[+t.dataset.cmax].max = +t.value; syncMax(); changed(); return; }
+  };
+  dlgForm.onclick = e => {
+    const t = e.target;
+    if(t.closest('[data-close]') || t.closest('#randBig')) return;
+    if(t.id==='pr_create'){ newTask(document.getElementById('pr_name').value.trim()); toast(`สร้างงาน “${task.name}” (เต็ม ${fmt(task.max)}) แล้ว`); paint(); return; }
+    if(t.closest('#pr_wheel')){ wireRandBig.keep = dlg.classList.contains('rand-big'); randomGroupDialog({setId: gs.id, mode:'wheel'}); return; }
+    if(t.id==='pr_edit' || t.id==='pr_edone'){ editing = !editing; paint(); return; }
+    if(t.id==='pr_cadd'){ task.rubric.crit.push({n:'เกณฑ์ใหม่', max:4}); syncMax(); changed(); return; }
+    if(t.id==='pr_creset'){ if(!confirm('ใช้เกณฑ์เริ่มต้น 5 ข้อแทนเกณฑ์ปัจจุบัน? (คะแนนที่ให้ไว้แล้วจะคงไว้ตามลำดับข้อ)')) return; task.rubric.crit = JSON.parse(JSON.stringify(PRES_CRIT)); syncMax(); changed(); return; }
+    const cd = t.closest('[data-cdel]'); if(cd){ const i = +cd.dataset.cdel; if(task.rubric.crit.length<2) return; task.rubric.crit.splice(i,1); Object.values(task.rubric.marks||{}).forEach(m=>m.splice(i,1)); syncMax(); changed(); return; }
+    const pg = t.closest('[data-pg]'); if(pg){ gid = pg.dataset.pg; paint(); return; }
+    const lv = t.closest('[data-crit]'); if(lv){
+      const g = groups().find(x=>x.id===gid); if(!g) return;
+      const m = ((task.rubric.marks ||= {})[g.id] ||= []); const i = +lv.dataset.crit, v = +lv.dataset.v;
+      while(m.length < task.rubric.crit.length) m.push(null);
+      m[i] = m[i]===v ? null : v;               // แตะซ้ำ = ยกเลิก
+      const was = complete(g); writeScores(g); changed();
+      if(!was && complete(g)) toast(`${g.name}: ${fmt(sumOf(g))}/${fmt(total(task))} คะแนน — ลงสมุดให้ ${g.members.length} คนแล้ว`);
+      return;
+    }
+    if(t.id==='pr_clear'){ const g = groups().find(x=>x.id===gid); if(!g) return; const before = JSON.stringify(marks(g)); task.rubric.marks[g.id] = []; writeScores(g); changed();
+      toast(`ล้างคะแนน ${g.name} แล้ว`, ()=>{ task.rubric.marks[g.id] = JSON.parse(before); writeScores(g); save(); render(); if(dlg.open) paint(); }); return; }
+    if(t.id==='pr_next'){ const gl = groups(), k = gl.findIndex(x=>x.id===gid); const nx = [...gl.slice(k+1), ...gl.slice(0,k)].find(x=>!complete(x)); if(nx){ gid = nx.id; paint(); dlg.scrollTop = 0; } return; }
+  };
 }
 function bonusAll(pts){
   const c = C(); const list = visibleStudents(c); if(!list.length) return;
@@ -1914,9 +2052,11 @@ function parseBulk(text, startNo){
 
 /* ================= dialog & toast ================= */
 const dlg = document.getElementById('dlg'), dlgForm = document.getElementById('dlgForm');
+// ปิดหน้าต่างจริง (ไม่ใช่สลับไปหน้าต่างอื่น) → เลิกโหมดขยาย/วงล้อ
+dlg.addEventListener('close', ()=>{ if(!dlg.open) dlg.classList.remove('rand-big','rand-wheel'); });
 dlg.addEventListener('close', ()=>{ if(pullLater){ pullLater = false; setTimeout(pullFromSheet, 400); } });
 let dlgSubmit = null;
-function openDialog(html, onSubmit, wide){ dlgForm.onchange = dlgForm.onclick = dlgForm.oninput = null; dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.remove('xwide'); dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
+function openDialog(html, onSubmit, wide){ dlgForm.onchange = dlgForm.onclick = dlgForm.oninput = null; dlgForm.innerHTML = html; dlgSubmit = onSubmit; dlg.classList.remove('xwide','rand-big','rand-wheel'); dlg.classList.toggle('wide', !!wide); if(dlg.open) dlg.close(); dlg.showModal(); }
 function closeDialog(){ dlg.close(); }
 function askConfirm(title, msg, okLabel, onOk){
   openDialog(`<h2>${esc(title)}</h2><p class="muted" style="margin-top:0">${esc(msg)}</p>
@@ -2364,6 +2504,7 @@ document.addEventListener('click', e=>{
     case 'renumber': renumberDo(false); break;
     case 'renumberAll': closeMenu(); renumberDo(true); break;
     case 'groups': closeMenu(); groupsDialog(); break;
+    case 'pres': closeMenu(); presDialog(); break;
     case 'img': closeMenu(); imageExportDialog(); break;
     case 'xlsx': exportXLSX(); break;
     case 'connect': connectDialog(); break;
